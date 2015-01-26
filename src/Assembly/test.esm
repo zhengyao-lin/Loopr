@@ -1,4 +1,0 @@
-ldb.i32 1
-ldb.single 2.0l
-ldstr s"你好";
-addb

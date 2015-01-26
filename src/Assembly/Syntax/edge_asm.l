@@ -55,6 +55,12 @@ Edge_Boolean st_character_literal_state;
 	yylval.constant = constant;
 	return INT32_LITERAL;
 }
+<INITIAL>"0"[0-7]+ {
+	Constant *constant = Asm_alloc_constant(CONST_INT32);
+	sscanf(yytext, "%o", &constant->u.int32_value);
+	yylval.constant = constant;
+	return INT32_LITERAL;
+}
 <INITIAL>"0" {
 	Constant *constant = Asm_alloc_constant(CONST_INT32);
 	constant->u.int32_value = 0;
@@ -173,6 +179,16 @@ Edge_Boolean st_character_literal_state;
         Asm_add_string_literal('\'');
     }
 }
+<STRING_LITERAL_STATE>\\[0-7]{1,3} {
+	int letter;
+	sscanf(&yytext[1], "%o", &letter);
+    Asm_add_string_literal(letter);
+}
+<STRING_LITERAL_STATE>\\[xX][0-9a-fA-F]{1,2} {
+	int letter;
+	sscanf(&yytext[2], "%x", &letter);
+    Asm_add_string_literal(letter);
+}
 <STRING_LITERAL_STATE>\n        {
     Asm_add_string_literal('\n');
     increment_line_number();
@@ -181,10 +197,6 @@ Edge_Boolean st_character_literal_state;
 <STRING_LITERAL_STATE>\\n       Asm_add_string_literal('\n');
 <STRING_LITERAL_STATE>\\t       Asm_add_string_literal('\t');
 <STRING_LITERAL_STATE>\\\\      Asm_add_string_literal('\\');
-<STRING_LITERAL_STATE>[\x81-\x9f\xe0-\xef][\x40-\x7e\x80-\xfc] {
-  Asm_add_string_literal(yytext[0]);
-  Asm_add_string_literal(yytext[1]);
-}
 <STRING_LITERAL_STATE><<EOF>>   {
 	DBG_panic(("EOF in string literal\n"));
 }

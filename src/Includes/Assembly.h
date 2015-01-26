@@ -70,6 +70,7 @@ Asm_Compiler *Asm_init_compiler();
 Asm_Compiler *Asm_compile_file(FILE *fp);
 
 /* create.c */
+int get_current_line_number();
 Constant *Asm_alloc_constant(ConstantType type);
 Constant *Asm_chain_constant(Constant *list, Constant *add);
 Bytecode *Asm_create_bytecode(char *identifier);

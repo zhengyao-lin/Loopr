@@ -9,7 +9,10 @@
  */
 
 typedef enum {
+	EDGE_NULL_CODE = 0,
+
 	EDGE_LD_BYTE = 1,
+	EDGE_LD_NULL,
 	EDGE_LD_STRING,
 	EDGE_LD_VAR,
 	EDGE_INIT,
@@ -49,10 +52,12 @@ typedef float			Edge_Single;
 typedef double			Edge_Double;
 
 typedef enum {
-	EDGE_NULL_CODE = 0,
+	EDGE_DUMMY = 0,
 
 	/* State Byte */
-	EDGE_BOOLEAN = 1,
+	EDGE_NULL = 1,
+
+	EDGE_BOOLEAN,
 	EDGE_CHAR,
 
 	/* Numberic Byte */

@@ -12,6 +12,7 @@
 	StatementList	*statement_list;
 }
 %token COMMA LP RP SEMICOLON DOT NEXT_LINE
+	   NULL_LITERAL
 %token <identifier>		IDENTIFIER
 %token <constant>		CHAR_LITERAL
 %token <constant>		INT32_LITERAL

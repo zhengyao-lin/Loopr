@@ -1,27 +1,30 @@
 #include <string.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
+#include "DBG.h"
 #include "UTL.h"
 
 TypeInfo Edge_Type_Info[] = {
 	{"dummy",	"dummy", 		-1},
-	{"bool",	"Boolean",		sizeof(Edge_Boolean)},
-	{"char",	"Char",			sizeof(Edge_Char)},
+	{"null",	"Null",			0},
 
-	{"sbyte",	"SByte",		sizeof(Edge_SByte)},
-	{"byte",	"Byte",			sizeof(Edge_Byte)},
+	{"bl",		"Boolean",		sizeof(Edge_Boolean)},
+	{"c4",		"Char",			sizeof(Edge_Char)},
+
+	{"s8",		"SByte",		sizeof(Edge_SByte)},
+	{"i8",		"Byte",			sizeof(Edge_Byte)},
 
 	{"i16",		"Int16",		sizeof(Edge_Int16)},
-	{"ui16",	"UInt16",		sizeof(Edge_UInt16)},
+	{"u16",		"UInt16",		sizeof(Edge_UInt16)},
 
 	{"i32",		"Int32",		sizeof(Edge_Int32)},
-	{"ui32",	"UInt32",		sizeof(Edge_UInt32)},
+	{"u32",		"UInt32",		sizeof(Edge_UInt32)},
 
 	{"i64",		"Int64",		sizeof(Edge_Int64)},
-	{"ui64",	"UInt64",		sizeof(Edge_UInt64)},
+	{"u64",		"UInt64",		sizeof(Edge_UInt64)},
 
-	{"single",	"Single",		sizeof(Edge_Single)},
-	{"double",	"Double",		sizeof(Edge_Double)},
+	{"f8",		"Single",		sizeof(Edge_Single)},
+	{"f16",		"Double",		sizeof(Edge_Double)},
 	{"str",		"String",		sizeof(Edge_Char *)},
 };
 
@@ -80,13 +83,25 @@ Edge_create_string(Edge_Byte *data, int *offset)
 	*offset = sizeof(Edge_Char) * (length + sizeof(Edge_Char));
 
 	ret = Edge_alloc_value(EDGE_STRING);
-	if (length <= 0) {
+
+	if (length <= -1) {
 		ret->u.string_value = NULL;
 		return ret;
 	}
 
 	ret->u.string_value = MEM_malloc(sizeof(Edge_Char) * (length + 1));
 	Edge_byte_deserialize(ret->u.string_value, data, sizeof(Edge_Char) * (length + 1));
+
+	return ret;
+}
+
+Edge_Value *
+Edge_create_null()
+{
+	Edge_Value *ret;
+
+	ret = Edge_alloc_value(EDGE_NULL);
+	MEM_fill(ret->u, NULL_VALUE);
 
 	return ret;
 }
@@ -114,11 +129,9 @@ Edge_get_init_value(Edge_BasicType type)
 		case EDGE_DOUBLE:
 			value->u.double_value = 0.0;
 			break;
-		case EDGE_STRING:
-			value->u.string_value = NULL;
-			break;
 		default:
-			printf("bad type: %d\n", type);
+			MEM_fill(value->u, NULL_VALUE);
+			break;
 	}
 	return value;
 }

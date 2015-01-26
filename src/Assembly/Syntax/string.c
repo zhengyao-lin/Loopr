@@ -58,7 +58,7 @@ Asm_close_string_literal(void)
     Asm_add_string_literal('\0');
     new_str_len = Edge_mbstowcs_len(st_string_literal_buffer);
     if (new_str_len < 0) {
-		DBG_panic(("Bad multibyte character\n"));
+		DBG_panic(("line %d: Bad multibyte character\n", get_current_line_number()));
     }
     new_str = MEM_malloc(sizeof(Edge_Char) * (new_str_len+1));
     Edge_mbstowcs(st_string_literal_buffer, new_str);
@@ -75,7 +75,7 @@ Asm_close_string_literal_string(void)
     Asm_add_string_literal('\0');
     new_str_len = strlen(st_string_literal_buffer);
     if (new_str_len < 0) {
-		DBG_panic(("Too few character\n"));
+		DBG_panic(("line %d: Too few character\n", get_current_line_number()));
     }
     new_str = MEM_malloc(sizeof(char) * (new_str_len+1));
     strcpy(new_str, st_string_literal_buffer);
@@ -92,9 +92,9 @@ Asm_close_character_literal(void)
     Asm_add_string_literal('\0');
     new_str_len = Edge_mbstowcs_len(st_string_literal_buffer);
     if (new_str_len < 0) {
-        DBG_panic(("Bad multibyte character\n"));
+        DBG_panic(("line %d: Bad multibyte character\n", get_current_line_number()));
     } else if (new_str_len > 1) {
-		DBG_panic(("Too long character literal\n"));
+		DBG_panic(("line %d: Too long character literal\n", get_current_line_number()));
     }
     
     Edge_mbstowcs(st_string_literal_buffer, buf);

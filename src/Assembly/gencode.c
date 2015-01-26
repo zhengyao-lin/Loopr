@@ -20,7 +20,7 @@ struct ConstTypeMapping_tag {
 	{CONST_DOUBLE,	EDGE_DOUBLE},
 
 	{CONST_WSTRING,	EDGE_STRING},
-	{CONST_STRING,	0},
+	{CONST_STRING,	-1},
 };
 
 Edge_Byte
@@ -40,8 +40,8 @@ Gencode_search_code(char *name)
 Edge_BasicType
 Gencode_search_type(char *name)
 {
-	Edge_Byte i;
-	Edge_Byte len = EDGE_BASIC_TYPE_PLUS_1;
+	Edge_BasicType i;
+	int len = EDGE_BASIC_TYPE_PLUS_1;
 
 	for (i = 1; i < len; i++) {
 		if (!strcmp(name, Edge_Type_Info[i].short_name)) {
@@ -58,11 +58,12 @@ Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 
 	if (list->bytecode->next != NULL) {
 		type = Gencode_search_type(list->bytecode->next->name);
-		if (type == (Edge_Byte)-1) {
-			DBG_panic(("line %d: Unknown type argument %s\n", list->line_number, list->bytecode->next->name));
-		}
 	} else {
 		type = const_type_mapping[list->constant->type].basic_type;
+	}
+
+	if (!(type > 0 && type <= EDGE_BASIC_TYPE_PLUS_1)) {
+		DBG_panic(("line %d: Unknown type argument \"%s\"\n", list->line_number, list->bytecode->next->name));
 	}
 
 	Coding_push_code(env, EDGE_LD_BYTE, &type, 1);
@@ -128,6 +129,24 @@ Gencode_push_constant_list(ByteContainer *env, Constant *list)
 }
 
 void
+Gencode_push_type_args(ByteContainer *env, Bytecode *code)
+{
+	Bytecode *pos;
+	Edge_BasicType type;
+
+	for (pos = code; pos; pos = pos->next) {
+		type = Gencode_search_type(pos->name);
+		if (type < EDGE_BASIC_TYPE_PLUS_1 && type > 0) {
+			Coding_push_code(env, EDGE_NULL_CODE, &type, 1);
+		} else {
+			DBG_panic(("line %d: Unknown type argument \"%s\"\n", pos->line_number, pos->name));
+		}
+	}
+
+	return;
+}
+
+void
 Gencode_statement(ByteContainer *env, Statement *list)
 {
 	Edge_Byte code;
@@ -145,6 +164,7 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			break;
 		default:
 			Coding_push_code(env, code, NULL, 0);
+			Gencode_push_type_args(env, list->bytecode->next);
 			Gencode_push_constant_list(env, list->constant);
 			break;
 	}

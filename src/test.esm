@@ -1,21 +1,36 @@
-init (1),"integer1"
-ldstr L"你好，我是林正耀"
-movv "integer1"
-ldv "integer1";
+init.str "integer1"
+ldstr L"你好，我是林正耀0222你好"
+stloc "integer1"
+ldloc "integer1"
 ldstr L"。我考砸了。"
 addstr
 popstr
-ldv "integer1"
+
+ldloc "integer1"
+
 popstr
-ldb.single 1.2
-ldb.single 2.3
+ldb.f16 2.3l
+ldb.f16 1.2l
 addf
 popf
-ldb.i64 5
-ldb.i64 2
-addb
+
+ldb.i32 22
+ldb.i32 2
+mulb
 popb
-ldb 0x2
+
+ldb.i8 240
+ldb.i8 120
+divb
+//ldb.s8 5
+//divb
 popb
-jmp (11)
+
+//ldb.i32 '\x76';
+//popb;
+
+ldnull
+popstr;
+
+//jmp (11)
 exit

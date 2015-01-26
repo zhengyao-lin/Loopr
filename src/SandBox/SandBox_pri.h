@@ -30,6 +30,9 @@
 	 ((p)[6] = (value) >> 8), \
 	 ((p)[7] = (value) & 0xff))
 #define NULL_VISUAL (L"(null)")
+#define NULL_VALUE (0x0)
+#define MEM_fill(obj, i) \
+	(memset(&(obj), (i), sizeof((obj))))
 
 typedef enum {
 	EDGE_NOTHING = 1,
@@ -86,6 +89,7 @@ Edge_byte_deserialize(void *dest, const Edge_Byte *data, int length);
 Edge_InfoTable *Edge_alloc_info_table(Edge_BasicType type);
 Edge_Value *Edge_alloc_value(Edge_BasicType type);
 Edge_Value *Edge_create_string(Edge_Byte *data, int *offset);
+Edge_Value *Edge_create_null();
 Edge_Value *Edge_get_init_value(Edge_BasicType type);
 
 /* coding.c */

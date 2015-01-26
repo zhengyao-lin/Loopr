@@ -68,6 +68,9 @@
 
 #define TYPE_CMP(t1, t2) \
 	((t1) >= (t2) ? (t1) : (t2))
+#define GET_BIT(num, type) \
+	((num) << (Edge_Type_Info[EDGE_INT64].size - Edge_Type_Info[type].size) * 8 \
+		   >> (Edge_Type_Info[EDGE_INT64].size - Edge_Type_Info[type].size) * 8)
 
 #define get_visual_string(src) (src ? src : NULL_VISUAL)
 
@@ -101,7 +104,9 @@ Private_do_push_byte(Edge_BasicType basic_type, Edge_Byte *code, int *offset)
 	Edge_Value *ret;
 
 	ret = Edge_alloc_value(basic_type);
-	Edge_byte_deserialize(&ret->u.uint64_value,
+
+	MEM_fill(ret->u, NULL_VALUE);
+	Edge_byte_deserialize(&ret->u.int64_value,
 						  code, Edge_Type_Info[basic_type].size);
 	*offset = Edge_Type_Info[basic_type].size;
 
@@ -253,6 +258,12 @@ Edge_execute(ExeEnvironment *env)
 				pc += 2 + offset;
 				break;
 			}
+			case EDGE_LD_NULL: {
+				ST(env->stack, 1) = Edge_create_null();
+				env->stack.stack_pointer++;
+				pc++;
+				break;	
+			}
 			case EDGE_LD_STRING: {
 				int offset;
 				ST(env->stack, 1) = Edge_create_string(&env->code[pc + 1], &offset);
@@ -275,20 +286,13 @@ Edge_execute(ExeEnvironment *env)
 				break;
 			}
 			case EDGE_POP_BYTE: {
-				if (ST_TYPE(env->stack, 0) != EDGE_INT64 && ST_TYPE(env->stack, 0) != EDGE_UINT64)
-					printf("#pop_byte: %d\n", ST(env->stack, 0)->u);
-				else
-					printf("#pop_long: %ld\n", ST(env->stack, 0)->u);
+				printf("#pop_byte: %ld\n", GET_BIT(ST_INT64(env->stack, 0), ST_TYPE(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case EDGE_POP_FLOAT: {
-				if (ST_TYPE(env->stack, 0) == EDGE_SINGLE) {
-					printf("#pop_single: %f\n", ST_SINGLE(env->stack, 0));
-				} else {
-					printf("#pop_double: %.12lf\n", ST_DOUBLE(env->stack, 0));
-				}
+				printf("#pop_single: %f\n", ST_DOUBLE(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
@@ -307,7 +311,7 @@ Edge_execute(ExeEnvironment *env)
 				break;
 			}
 			case EDGE_ADD_BYTE: {
-				ST_WRITE_UINT64(env->stack, -1, ST_UINT64(env->stack, -1) + ST_UINT64(env->stack, 0));
+				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) + ST_INT64(env->stack, 0));
 				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
 												   ST_TYPE(env->stack, 0));
 				env->stack.stack_pointer--;
@@ -315,7 +319,7 @@ Edge_execute(ExeEnvironment *env)
 				break;
 			}
 			case EDGE_ADD_FLOAT: {
-				ST_WRITE_DOUBLE(env->stack, -1, ST_FLOAT(env->stack, -1) + ST_FLOAT(env->stack, 0));
+				ST_WRITE_DOUBLE(env->stack, -1, ST_DOUBLE(env->stack, -1) + ST_DOUBLE(env->stack, 0));
 				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
 												   ST_TYPE(env->stack, 0));
 				env->stack.stack_pointer--;
@@ -329,7 +333,7 @@ Edge_execute(ExeEnvironment *env)
 				break;
 			}
 			case EDGE_SUB_BYTE: {
-				ST_WRITE_UINT64(env->stack, -1, ST_UINT64(env->stack, -1) - ST_UINT64(env->stack, 0));
+				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) - ST_INT64(env->stack, 0));
 				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
 												   ST_TYPE(env->stack, 0));
 				env->stack.stack_pointer--;
@@ -337,7 +341,7 @@ Edge_execute(ExeEnvironment *env)
 				break;
 			}
 			case EDGE_MUL_BYTE: {
-				ST_WRITE_UINT64(env->stack, -1, ST_UINT64(env->stack, -1) * ST_UINT64(env->stack, 0));
+				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) * ST_INT64(env->stack, 0));
 				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
 												   ST_TYPE(env->stack, 0));
 				env->stack.stack_pointer--;
@@ -345,7 +349,7 @@ Edge_execute(ExeEnvironment *env)
 				break;
 			}
 			case EDGE_DIV_BYTE: {
-				ST_WRITE_UINT64(env->stack, -1, ST_UINT64(env->stack, -1) / ST_UINT64(env->stack, 0));
+				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) / ST_INT64(env->stack, 0));
 				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
 												   ST_TYPE(env->stack, 0));
 				env->stack.stack_pointer--;

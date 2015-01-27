@@ -20,7 +20,6 @@
 %token <constant>		DOUBLE_LITERAL
 %token <constant>		SINGLE_LITERAL
 %token <constant>		STRING_LITERAL
-%token <constant>		WSTRING_LITERAL
 
 %type <bytecode> dot_bytecode
 %type <constant> constant constant_list constant_list_opt
@@ -29,11 +28,11 @@
 %%
 translation_unit
 	: /* NULL */
-	| statement_list
+	| next_line_list_opt statement_list
 	{
 		Asm_Compiler *current_compiler;
 		current_compiler = Asm_get_current_compiler();
-		current_compiler->list = $1;
+		current_compiler->list = $2;
 	}
 	;
 dot_bytecode
@@ -54,7 +53,6 @@ constant
 	| DOUBLE_LITERAL
 	| SINGLE_LITERAL
 	| STRING_LITERAL
-	| WSTRING_LITERAL
 	| LP INT32_LITERAL RP
 	{
 		($2)->type = CONST_BYTE;
@@ -103,9 +101,9 @@ statement_list
 	{
 		$$ = Asm_create_statement_list($1);
 	}
-	| statement_list statement next_line_list_opt
+	| statement next_line_list_opt statement_list
 	{
-		$$ = Asm_chain_statement_list($1, $2);
+		$$ = Asm_chain_statement_list($3, $1);
 	}
 	;
 %%

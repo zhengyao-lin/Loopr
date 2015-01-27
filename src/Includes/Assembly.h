@@ -16,14 +16,13 @@ typedef enum {
 	CONST_SINGLE,
 	CONST_DOUBLE,
 
-	CONST_WSTRING,
 	CONST_STRING
 } ConstantType;
 
 typedef struct Constant_tag {
 	ConstantType type;
 	union {
-		char			*string_value;
+		Edge_Char		*string_value;
 		Edge_Char		char_value;
 		Edge_Byte		byte_value;
 		Edge_Int16		int16_value;
@@ -31,7 +30,6 @@ typedef struct Constant_tag {
 		Edge_Int64		int64_value;
 		Edge_Single		single_value;
 		Edge_Double		double_value;
-		Edge_Char		*wstring_value;
 	} u;
 
 	int line_number;
@@ -80,10 +78,9 @@ StatementList *Asm_create_statement_list(Statement *st);
 StatementList *Asm_chain_statement_list(StatementList *list, Statement *st);
 
 /* string.c */
-void Asm_open_string_literal(Edge_Boolean is_wstring);
+void Asm_open_string_literal(void);
 void Asm_add_string_literal(int letter);
 void Asm_reset_string_literal_buffer(void);
-Edge_Char *Asm_close_string_literal(void);
-char *Asm_close_string_literal_string(void);
+char *Asm_close_string_literal(void);
 int Asm_close_character_literal(void);
 char *Asm_create_identifier(char *str);

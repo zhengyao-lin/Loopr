@@ -19,8 +19,7 @@ struct ConstTypeMapping_tag {
 	{CONST_SINGLE,	EDGE_SINGLE},
 	{CONST_DOUBLE,	EDGE_DOUBLE},
 
-	{CONST_WSTRING,	EDGE_STRING},
-	{CONST_STRING,	-1},
+	{CONST_STRING,	EDGE_STRING},
 };
 
 Edge_Byte
@@ -76,7 +75,6 @@ Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 void
 Gencode_push_constant(ByteContainer *env, Constant *constant)
 {
-	int len;
 	Edge_BasicType type;
 
 	if (constant == NULL) {
@@ -99,10 +97,6 @@ Gencode_push_constant(ByteContainer *env, Constant *constant)
 			Coding_push_code(env, EDGE_NULL_CODE,
 					 		 Edge_byte_serialize(&constant->u.int64_value, Edge_Type_Info[type].size),
 					 		 Edge_Type_Info[type].size);
-			break;
-		case CONST_WSTRING:
-			len = sizeof(Edge_Char) * (Edge_wcslen(constant->u.wstring_value) + sizeof(Edge_Char));
-			Coding_push_code(env, EDGE_NULL_CODE, constant->u.wstring_value, len);
 			break;
 		case CONST_STRING:
 			Coding_push_code(env, EDGE_NULL_CODE,

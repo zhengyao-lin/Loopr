@@ -128,23 +128,13 @@ Edge_Boolean st_character_literal_state;
 <CC_COMMENT>.		;
 
  /* String Constants */
-<INITIAL>"L\'" {
-    Asm_open_string_literal(True);
-    st_character_literal_state = True;
-    BEGIN STRING_LITERAL_STATE;
-}
 <INITIAL>\' {
-    Asm_open_string_literal(False);
+    Asm_open_string_literal();
     st_character_literal_state = True;
-    BEGIN STRING_LITERAL_STATE;
-}
-<INITIAL>"L\"" {
-    Asm_open_string_literal(True);
-    st_character_literal_state = False;
     BEGIN STRING_LITERAL_STATE;
 }
 <INITIAL>\" {
-    Asm_open_string_literal(False);
+    Asm_open_string_literal();
     st_character_literal_state = False;
     BEGIN STRING_LITERAL_STATE;
 }
@@ -153,19 +143,11 @@ Edge_Boolean st_character_literal_state;
     if (st_character_literal_state) {
         Asm_add_string_literal('\"');
     } else {
-		if (Asm_get_is_wstring()) {
-			Constant *constant = Asm_alloc_constant(CONST_WSTRING);
-			constant->u.wstring_value = Asm_close_string_literal();
-			yylval.constant = constant;
-			BEGIN INITIAL;
-			return WSTRING_LITERAL;
-		} else {
-			Constant *constant = Asm_alloc_constant(CONST_STRING);
-			constant->u.string_value = Asm_close_string_literal_string();
-			yylval.constant = constant;
-			BEGIN INITIAL;
-			return STRING_LITERAL;
-		}
+		Constant *constant = Asm_alloc_constant(CONST_STRING);
+		constant->u.string_value = Asm_close_string_literal();
+		yylval.constant = constant;
+		BEGIN INITIAL;
+		return STRING_LITERAL;
     }
 }
 <STRING_LITERAL_STATE>\' {

@@ -1,8 +1,11 @@
-init.str "integer1"
-ldstr L"你好，我是林正耀0222你好"
+initloc.f8 "float1";
+initloc.str "integer1"
+initloc.f16 "double1";
+
+ldstr "你好，我是林正耀0222你好"
 stloc "integer1"
 ldloc "integer1"
-ldstr L"。我考砸了。"
+ldstr "。我考砸了。"
 addstr
 popstr
 
@@ -19,11 +22,11 @@ ldb.i32 2
 mulb
 popb
 
-ldb.i8 240
-ldb.i8 120
+ldb.b8 240
+ldb.u16 256
+subb
+ldb.s8 5
 divb
-//ldb.s8 5
-//divb
 popb
 
 //ldb.i32 '\x76';
@@ -32,5 +35,7 @@ popb
 ldnull
 popstr;
 
-//jmp (11)
-exit
+ldb.f16 3.141592654l;
+stloc "double1";
+ldloc "double1";
+popf;

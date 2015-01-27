@@ -72,7 +72,7 @@
 	((num) << (Edge_Type_Info[EDGE_INT64].size - Edge_Type_Info[type].size) * 8 \
 		   >> (Edge_Type_Info[EDGE_INT64].size - Edge_Type_Info[type].size) * 8)
 
-#define get_visual_string(src) (src ? src : NULL_VISUAL)
+#define get_visual_string(src) ((src) ? (src)->u.string_value : NULL_VISUAL)
 
 Edge_Char *
 chain_string(Edge_Value *str1, Edge_Value *str2)
@@ -82,8 +82,8 @@ chain_string(Edge_Value *str1, Edge_Value *str2)
 	Edge_Char *right;
 	Edge_Char *left;
 
-	right = get_visual_string(str1->u.string_value);
-	left = get_visual_string(str2->u.string_value);
+	right = get_visual_string(str1);
+	left = get_visual_string(str2);
 
 	len = Edge_wcslen(right) + Edge_wcslen(left);
 	ret = MEM_malloc(sizeof(Edge_Char) * (len + 1));
@@ -91,7 +91,7 @@ chain_string(Edge_Value *str1, Edge_Value *str2)
 	Edge_wcscpy(ret, right);
 	Edge_wcscat(ret, left);
 
-	if (str1->u.string_value) {
+	if (str1 && str1->u.string_value) {
 		MEM_free(str1->u.string_value);
 	}
 
@@ -105,7 +105,6 @@ Private_do_push_byte(Edge_BasicType basic_type, Edge_Byte *code, int *offset)
 
 	ret = Edge_alloc_value(basic_type);
 
-	MEM_fill(ret->u, NULL_VALUE);
 	Edge_byte_deserialize(&ret->u.int64_value,
 						  code, Edge_Type_Info[basic_type].size);
 	*offset = Edge_Type_Info[basic_type].size;
@@ -120,7 +119,7 @@ Private_init_local_variable(ExeEnvironment *env, Edge_BasicType type, char *iden
 	for (i = 0; i < env->local_variable_count; i++) {
 		if (!strcmp(env->local_variable[i].identifier,
 					identifier)) {
-			if (env->wflag != EDGE_NOTHING) {
+			if (env->wflag > EDGE_JUST_PANIC) {
 				DBG_panic(("Duplicated variable name \"%s\"\n", identifier));
 			}
 			return;
@@ -140,16 +139,23 @@ Private_copy_variable(Edge_Value *src)
 {
 	Edge_Value *ret;
 
-	ret = Edge_alloc_value(src->table->type);
-	switch (src->table->type) {
-		case EDGE_STRING:
-			if (src->u.string_value) {
-				ret->u.string_value = MEM_malloc(sizeof(Edge_Char) * (Edge_wcslen(src->u.string_value) + 1));
-				Edge_wcscpy(ret->u.string_value, src->u.string_value);
-			} else {
-				ret->u.string_value = NULL;
-			}
-			break;
+	if (src) {
+		ret = Edge_alloc_value(src->table->type);
+		switch (src->table->type) {
+			case EDGE_STRING:
+				if (src->u.string_value) {
+					ret->u.string_value = MEM_malloc(sizeof(Edge_Char) * (Edge_wcslen(src->u.string_value) + 1));
+					Edge_wcscpy(ret->u.string_value, src->u.string_value);
+				} else {
+					ret->u.string_value = NULL;
+				}
+				break;
+			default:
+				ret->u = src->u;
+				break;
+		}
+	} else {
+		ret = NULL;
 	}
 
 	return ret;
@@ -162,9 +168,6 @@ Private_assign_local_variable(ExeEnvironment *env, char *name, Edge_Value *value
 	for (i = 0; i < env->local_variable_count; i++) {
 		if (!strcmp(env->local_variable[i].identifier,
 					name)) {
-			/*if (env->local_variable[i].value) {
-				Private_dispose_value(&env->local_variable[i].value);
-			}*/
 			env->local_variable[i].value = Private_copy_variable(value);
 			return;
 		}
@@ -216,11 +219,15 @@ Private_walle_marker(ExeEnvironment *env)
 	int i;
 
 	for (i = 0; i < env->local_variable_count; i++) {
-		env->local_variable[i].value->marked = True;
+		if (env->local_variable[i].value) {
+			env->local_variable[i].value->marked = True;
+		}
 	}
 
 	for (i = 0; i <= env->stack.stack_pointer; i++) {
-		env->stack.value[i]->marked = True;
+		if (env->stack.value[i]) {
+			env->stack.value[i]->marked = True;
+		}
 	}
 
 	return;
@@ -266,19 +273,19 @@ Edge_execute(ExeEnvironment *env)
 			}
 			case EDGE_LD_STRING: {
 				int offset;
-				ST(env->stack, 1) = Edge_create_string(&env->code[pc + 1], &offset);
+				ST(env->stack, 1) = Edge_create_string(&(env->code[pc + 1]), &offset);
 				env->stack.stack_pointer++;
 				pc += 1 + offset;
 				break;				
 			}
-			case EDGE_LD_VAR: {
+			case EDGE_LD_LOC: {
 				char *name = &env->code[pc + 1];
 				ST(env->stack, 1) = Private_load_local_variable(env, name);
 				env->stack.stack_pointer++;
 				pc += 2 + strlen(name);
 				break;
 			}
-			case EDGE_INIT: {
+			case EDGE_INIT_LOC: {
 				Edge_BasicType type = env->code[pc + 1];
 				char *identifier = &env->code[pc + 2];
 				Private_init_local_variable(env, type, identifier);
@@ -292,18 +299,22 @@ Edge_execute(ExeEnvironment *env)
 				break;
 			}
 			case EDGE_POP_FLOAT: {
-				printf("#pop_single: %f\n", ST_DOUBLE(env->stack, 0));
+				if (ST_TYPE(env->stack, 0) == EDGE_SINGLE) {
+					printf("#pop_single: %f\n", ST_SINGLE(env->stack, 0));
+				} else {
+					printf("#pop_double: %lf\n", ST_DOUBLE(env->stack, 0));
+				}
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case EDGE_POP_STRING: {
-				printf("#pop_string: %ls\n", get_visual_string(ST_STRING(env->stack, 0)));
+				printf("#pop_string: %ls\n", get_visual_string(ST(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
-			case EDGE_MOV_VAR: {
+			case EDGE_STORE_LOC: {
 				char *name = &env->code[pc + 1];
 				Private_assign_local_variable(env, name, ST(env->stack, 0));
 				env->stack.stack_pointer--;

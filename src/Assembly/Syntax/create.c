@@ -88,9 +88,8 @@ Asm_chain_statement_list(StatementList *list, Statement *st)
 {
 	StatementList *pos;
 
-	for (pos = list; pos->next; pos = pos->next)
-		;
-	pos->next = Asm_create_statement_list(st);
+	pos = Asm_create_statement_list(st);
+	pos->next = list;
 
-	return list;
+	return pos;
 }

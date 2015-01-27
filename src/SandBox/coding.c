@@ -4,17 +4,21 @@
 
 ByteInfo Edge_Byte_Info[] = {
 	{"dummy",	0,	0},
+
 	{"ldb",		0,	1},
 	{"ldnull",	0,	1},
 	{"ldstr",	0,	1},
 	{"ldloc",	0,	1},
-	{"init",	0,	0},
+
+	{"initloc",	0,	0},
+	{"conv",	1,	0},
 
 	{"popb",	1,	-1},
 	{"popf",	1,	-1},
 	{"popstr",	1,	-1},
 
 	{"stloc",	1,	-1},
+
 	{"addb",	2,	-1},
 	{"addf",	2,	-1},
 	{"addstr",	2,	-1},

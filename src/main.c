@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 {
 	setlocale(LC_ALL, "");
 #if 1
-	FILE *fp;
+	FILE *fp = NULL;
 
 	if (argc >= 2) {
 		fp = fopen(argv[1], "r");

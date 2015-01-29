@@ -4,40 +4,40 @@
 #include <limits.h>
 #include "DBG.h"
 #include "MEM.h"
-#include "EBS.h"
+#include "LBS.h"
 
 size_t
-Edge_wcslen(wchar_t *str)
+Loopr_wcslen(wchar_t *str)
 {
     return (str ? wcslen(str) : -1);
 }
 
 wchar_t *
-Edge_wcscpy(wchar_t *dest, wchar_t *src)
+Loopr_wcscpy(wchar_t *dest, wchar_t *src)
 {
     return wcscpy(dest, src);
 }
 
 wchar_t *
-Edge_wcsncpy(wchar_t *dest, wchar_t *src, size_t n)
+Loopr_wcsncpy(wchar_t *dest, wchar_t *src, size_t n)
 {
     return wcsncpy(dest, src, n);
 }
 
 int
-Edge_wcscmp(wchar_t *s1, wchar_t *s2)
+Loopr_wcscmp(wchar_t *s1, wchar_t *s2)
 {
     return wcscmp(s1, s2);
 }
 
 wchar_t *
-Edge_wcscat(wchar_t *s1, wchar_t *s2)
+Loopr_wcscat(wchar_t *s1, wchar_t *s2)
 {
     return wcscat(s1, s2);
 }
 
 int
-Edge_mbstowcs_len(const char *src)
+Loopr_mbstowcs_len(const char *src)
 {
     int src_idx, dest_idx;
     int status;
@@ -57,7 +57,7 @@ Edge_mbstowcs_len(const char *src)
 }
 
 void
-Edge_mbstowcs(const char *src, wchar_t *dest)
+Loopr_mbstowcs(const char *src, wchar_t *dest)
 {
     int src_idx, dest_idx;
     int status;
@@ -74,7 +74,7 @@ Edge_mbstowcs(const char *src, wchar_t *dest)
 }
 
 int
-Edge_wcstombs_len(const wchar_t *src)
+Loopr_wcstombs_len(const wchar_t *src)
 {
     int src_idx, dest_idx;
     int status;
@@ -92,7 +92,7 @@ Edge_wcstombs_len(const wchar_t *src)
 }
 
 void
-Edge_wcstombs(const wchar_t *src, char *dest)
+Loopr_wcstombs(const wchar_t *src, char *dest)
 {
     int src_idx, dest_idx;
     int status;
@@ -108,32 +108,32 @@ Edge_wcstombs(const wchar_t *src, char *dest)
 }
 
 char *
-Edge_wcstombs_alloc(const wchar_t *src)
+Loopr_wcstombs_alloc(const wchar_t *src)
 {
     int len;
     char *ret;
 
-    len = Edge_wcstombs_len(src);
+    len = Loopr_wcstombs_len(src);
     ret = MEM_malloc(len + 1);
-    Edge_wcstombs(src, ret);
+    Loopr_wcstombs(src, ret);
 
     return ret;
 }
 
 wchar_t *
-Edge_wcsdup(const wchar_t *src)
+Loopr_wcsdup(const wchar_t *src)
 {
 	int len;
 	wchar_t *ret;
 
-	len = Edge_wcslen(src);
+	len = Loopr_wcslen(src);
 	ret = MEM_malloc(sizeof(wchar_t) * (len + 1));
 
-	return Edge_wcscpy(ret, src);
+	return Loopr_wcscpy(ret, src);
 }
 
 char
-Edge_wctochar(wchar_t src)
+Loopr_wctochar(wchar_t src)
 {
     mbstate_t ps;
     int status;
@@ -147,18 +147,18 @@ Edge_wctochar(wchar_t src)
 }
 
 int
-Edge_print_wcs(FILE *fp, wchar_t *str)
+Loopr_print_wcs(FILE *fp, wchar_t *str)
 {
     return fprintf(fp, "%ls", str);
 }
 
 
 int
-Edge_print_wcs_ln(FILE *fp, wchar_t *str)
+Loopr_print_wcs_ln(FILE *fp, wchar_t *str)
 {
     int result;
 
-    result = Edge_print_wcs(fp, str);
+    result = Loopr_print_wcs(fp, str);
     fprintf(fp, "\n");
 
     return result;

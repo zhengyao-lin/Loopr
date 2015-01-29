@@ -1,6 +1,6 @@
-initloc.f8 "float1";
-initloc.str "integer1"
-initloc.f16 "double1";
+initloc.null "float1";
+initloc.null "double1";
+initloc.null "integer1"
 
 ldstr "你好，我是林正耀0222你好"
 stloc "integer1"

@@ -94,4 +94,6 @@ MEM_dispose_storage_func(MEM_Controller controller, MEM_Storage storage)
         storage->page_list = temp;
     }
     MEM_free_func(controller, storage);
+
+	return;
 }

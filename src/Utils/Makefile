@@ -9,4 +9,4 @@ clean:
 	-rm -f *.o
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) $*.c
-wchar.o: wchar.c ../Includes/DBG.h ../Includes/MEM.h ../Includes/EBS.h
+wchar.o: wchar.c ../Includes/DBG.h ../Includes/MEM.h ../Includes/LBS.h

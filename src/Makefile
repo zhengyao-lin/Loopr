@@ -5,7 +5,7 @@ OBJS = \
 	Memory/mem.o \
 	Debug/dbg.o \
 	Utils/utl.o \
-	Assembly/Assembly.o \
+	Assembler/Assembler.o \
 	main.o
 INCLUDES = \
 	-IIncludes \
@@ -22,7 +22,7 @@ clean:
 	cd SandBox; $(MAKE) clean;
 	cd Debug; $(MAKE) clean;
 	cd Utils; $(MAKE) clean;
-	cd Assembly; $(MAKE) clean;
+	cd Assembler; $(MAKE) clean;
 	-rm -f *.o $(TARGET) *~
 
 Memory/mem.o:
@@ -33,7 +33,7 @@ Debug/dbg.o:
 	cd Debug; $(MAKE);
 Utils/utl.o:
 	cd Utils; $(MAKE);
-Assembly/Assembly.o:
-	cd Assembly; $(MAKE);
+Assembler/Assembler.o:
+	cd Assembler; $(MAKE);
 
 main.o: main.c SandBox/SandBox_pri.h Includes/MEM.h

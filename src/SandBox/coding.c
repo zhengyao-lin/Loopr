@@ -2,7 +2,7 @@
 #include "SandBox_pri.h"
 #include "MEM.h"
 
-ByteInfo Edge_Byte_Info[] = {
+ByteInfo Loopr_Byte_Info[] = {
 	{"dummy",	0,	0},
 
 	{"ldb",		0,	1},
@@ -30,10 +30,11 @@ ByteInfo Edge_Byte_Info[] = {
 	{"exit",	0,	0},
 };
 
-Edge_Byte *
+Loopr_Byte *
 Coding_alloc_byte(int length)
 {
-	Edge_Byte *ret = MEM_malloc(sizeof(Edge_Byte) * length);
+	Loopr_Byte *ret = MEM_malloc(sizeof(Loopr_Byte) * length);
+
 	return ret;
 }
 
@@ -52,42 +53,48 @@ Coding_init_coding_env(void)
 }
 
 void
-Coding_byte_cat(ByteContainer *env, Edge_Byte *src, int count)
+Coding_byte_cat(ByteContainer *env, Loopr_Byte *src, int count)
 {
 	env->alloc_size += count;
 
 	env->code = MEM_realloc(env->code,
-							sizeof(Edge_Byte) * env->alloc_size);
+							sizeof(Loopr_Byte) * env->alloc_size);
 
 	memcpy(&env->code[env->next], src, count);
 	env->next += count;
+
+	return;
 }
 
-#define check_is_code(c) ((c) > 0 && (c) < EDGE_CODE_PLUS_1 ? (c) : 0)
+#define check_is_code(c) ((c) > 0 \
+						  && (c) < LPR_CODE_PLUS_1 \
+						  && (c) != LPR_NULL_CODE ? (c) : LPR_False)
 #define check_is_negative(num) ((num) < 0 ? 0 : (num))
 
 void
-Coding_push_code(ByteContainer *env, Edge_Byte code, Edge_Byte *args, int args_count)
+Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args_count)
 {
-	if (code != EDGE_NULL_CODE) {
+	if (check_is_code(code)) {
 		Coding_byte_cat(env, &code, 1);
-		env->stack_size += check_is_negative(Edge_Byte_Info[check_is_code(code)].stack_regulator);
+		env->stack_size += check_is_negative(Loopr_Byte_Info[code].stack_regulator);
 	}
 	Coding_byte_cat(env, args, args_count);
+
+	return;
 }
 
 ExeEnvironment *
 Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 {
 	ExeEnvironment *ret;
-	Edge_Value **stack_value;
+	Loopr_Value **stack_value;
 
 	ret = MEM_malloc(sizeof(ExeEnvironment));
 	ret->wflag = wflag;
 	ret->entrance = 0;
 	ret->code_length = env->alloc_size;
 	ret->code = env->code;
-	stack_value = MEM_malloc(sizeof(Edge_Value *) * (env->stack_size + 1));
+	stack_value = MEM_malloc(sizeof(Loopr_Value *) * (env->stack_size + 1));
 
 	ret->stack.alloc_size = env->stack_size + 1;
 	ret->stack.stack_pointer = -1;

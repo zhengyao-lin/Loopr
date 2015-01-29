@@ -13,7 +13,7 @@ $(TARGET):$(OBJS)
 clean:
 	-rm -f *.o
 
-execute.o: execute.c SandBox_pri.h ../Includes/EBS.h ../Includes/UTL.h ../Includes/DBG.h
-value.o: value.c SandBox_pri.h ../Includes/EBS.h ../Includes/UTL.h
-coding.o: coding.c SandBox_pri.h ../Includes/EBS.h ../Includes/UTL.h
-wall-e.o: wall-e.c SandBox_pri.h ../Includes/EBS.h ../Includes/UTL.h
+execute.o: execute.c SandBox_pri.h ../Includes/LBS.h ../Includes/UTL.h ../Includes/DBG.h
+value.o: value.c SandBox_pri.h ../Includes/LBS.h ../Includes/UTL.h
+coding.o: coding.c SandBox_pri.h ../Includes/LBS.h ../Includes/UTL.h
+wall-e.o: wall-e.c SandBox_pri.h ../Includes/LBS.h ../Includes/UTL.h

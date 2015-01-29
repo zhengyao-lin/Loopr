@@ -1,4 +1,4 @@
-TARGET = Assembly.o
+TARGET = Assembler.o
 CFLAGS = -c -g -DDEBUG -Wall -ansi -pedantic -Wswitch-enum
 OBJS = \
 	Syntax/Syntax.o \
@@ -22,6 +22,6 @@ Syntax/Syntax.o:
 #test:
 #	$(CC) -o test $(OBJS)
 
-interface.o: interface.c ../Includes/EBS.h ../Includes/Assembly.h
-gencode.o: gencode.c ../Includes/EBS.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/Assembly.h ../SandBox/SandBox_pri.h
+interface.o: interface.c ../Includes/LBS.h ../Includes/Assembler.h
+gencode.o: gencode.c ../Includes/LBS.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/Assembler.h ../SandBox/SandBox_pri.h
 #main.o: main.c Syntax/syntax.h global.h

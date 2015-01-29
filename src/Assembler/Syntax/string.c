@@ -3,9 +3,9 @@
 #include <string.h>
 #include "MEM.h"
 #include "UTL.h"
-#include "EBS.h"
+#include "LBS.h"
 #include "DBG.h"
-#include "Assembly.h"
+#include "Assembler.h"
 
 #define STRING_ALLOC_SIZE       (256)
 
@@ -65,14 +65,14 @@ Asm_close_character_literal(void)
     int new_str_len;
 
     Asm_add_string_literal('\0');
-    new_str_len = Edge_mbstowcs_len(st_string_literal_buffer);
+    new_str_len = Loopr_mbstowcs_len(st_string_literal_buffer);
     if (new_str_len < 0) {
         DBG_panic(("line %d: Bad multibyte character\n", get_current_line_number()));
     } else if (new_str_len > 1) {
 		DBG_panic(("line %d: Too long character literal\n", get_current_line_number()));
     }
     
-    Edge_mbstowcs(st_string_literal_buffer, buf);
+    Loopr_mbstowcs(st_string_literal_buffer, buf);
 
     return buf[0];
 }

@@ -2,47 +2,47 @@
 #include <time.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
-#define WALLE_COLLECT_THRESHOLD (sizeof(Edge_Value) * 64)
+#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 64)
 
 static void (*__walle_marker)(void);
-static Edge_Int64 __threshold = WALLE_COLLECT_THRESHOLD;
-static Edge_Int64 __allocd_size = 0;
-static Edge_Value *__walle_header = NULL;
+static Loopr_Int64 __threshold = WALLE_COLLECT_THRESHOLD;
+static Loopr_Int64 __allocd_size = 0;
+static Loopr_Value *__walle_header = NULL;
 
 void
-Walle_set_header(Edge_Value *v)
+Walle_set_header(Loopr_Value *v)
 {
 	__walle_header = v;
 	return;
 }
 
-Edge_Value *
+Loopr_Value *
 Walle_get_header()
 {
 	return __walle_header;
 }
 
 void
-Walle_add_alloc_size(Edge_Int64 add)
+Walle_add_alloc_size(Loopr_Int64 add)
 {
 	__allocd_size += add;
 	return;
 }
 
-Edge_Int64
+Loopr_Int64
 Walle_get_alloc_size()
 {
 	return __allocd_size;
 }
 
 void
-Walle_add_threshold(Edge_Int64 add)
+Walle_add_threshold(Loopr_Int64 add)
 {
 	__threshold += add;
 	return;
 }
 
-Edge_Int64
+Loopr_Int64
 Walle_get_threshold()
 {
 	return __threshold;
@@ -62,10 +62,10 @@ Walle_get_marker()
 }
 
 void
-Walle_add_object(Edge_Value *v)
+Walle_add_object(Loopr_Value *v)
 {
-	Edge_Value *header;
-	Edge_Value *pos;
+	Loopr_Value *header;
+	Loopr_Value *pos;
 
 	header = Walle_get_header();
 	for (pos = header; pos && pos->next; pos = pos->next) {
@@ -79,7 +79,7 @@ Walle_add_object(Edge_Value *v)
 	}
 
 	v->next = NULL;
-	Walle_add_alloc_size(sizeof(Edge_Value));
+	Walle_add_alloc_size(sizeof(Loopr_Value));
 
 	return;
 }
@@ -87,22 +87,22 @@ Walle_add_object(Edge_Value *v)
 void
 Walle_reset_mark()
 {
-	Edge_Value *header;
-	Edge_Value *pos;
+	Loopr_Value *header;
+	Loopr_Value *pos;
 
 	header = Walle_get_header();
 	for (pos = header; pos; pos = pos->next) {
-		pos->marked = False;
+		pos->marked = LPR_False;
 	}
 
 	return;
 }
 
 void
-Walle_dispose_value(Edge_Value **target)
+Walle_dispose_value(Loopr_Value **target)
 {
 	switch ((*target)->table->type) {
-		case EDGE_STRING:
+		case LPR_STRING:
 			MEM_free((*target)->u.string_value);
 			break;
 	}
@@ -127,9 +127,9 @@ Walle_dispose_value(Edge_Value **target)
 void
 Walle_gcollect()
 {
-	Edge_Value *header;
-	Edge_Value *pos;
-	Edge_Value *tmp;
+	Loopr_Value *header;
+	Loopr_Value *pos;
+	Loopr_Value *tmp;
 
 	header = Walle_get_header();
 	if (Walle_get_marker()) {
@@ -139,10 +139,10 @@ Walle_gcollect()
 	/*printf("start collecting\n");
 	printf("alloc'd: %d\n", Walle_get_alloc_size());*/
 	for (pos = header; pos;) {
-		if (pos->marked != True) {
+		if (pos->marked != LPR_True) {
 			tmp = pos->next;
 			Walle_dispose_value(&pos);
-			Walle_add_alloc_size(-sizeof(Edge_Value));
+			Walle_add_alloc_size(-sizeof(Loopr_Value));
 			pos = tmp;
 			continue;
 		}
@@ -161,5 +161,6 @@ Walle_check_mem()
 			Walle_add_threshold(WALLE_COLLECT_THRESHOLD);
 		}
 	}
+
 	return;
 }

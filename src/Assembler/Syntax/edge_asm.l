@@ -5,9 +5,9 @@ LETTER			[a-zA-Z_]
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "EBS.h"
+#include "LBS.h"
 #include "DBG.h"
-#include "Assembly.h"
+#include "Assembler.h"
 #include "y.tab.h"
 
 int
@@ -27,7 +27,7 @@ increment_line_number(void)
     Asm_get_current_compiler()->current_line_number++;
 }
 
-Edge_Boolean st_character_literal_state;
+Loopr_Boolean st_character_literal_state;
 %}
 %start C_COMMENT CC_COMMENT STRING_LITERAL_STATE
 %%
@@ -130,12 +130,12 @@ Edge_Boolean st_character_literal_state;
  /* String Constants */
 <INITIAL>\' {
     Asm_open_string_literal();
-    st_character_literal_state = True;
+    st_character_literal_state = LPR_True;
     BEGIN STRING_LITERAL_STATE;
 }
 <INITIAL>\" {
     Asm_open_string_literal();
-    st_character_literal_state = False;
+    st_character_literal_state = LPR_False;
     BEGIN STRING_LITERAL_STATE;
 }
 

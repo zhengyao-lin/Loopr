@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "EBS.h"
-#include "Assembly.h"
+#include "LBS.h"
+#include "Assembler.h"
 
 Asm_Compiler *__current_compiler;
 

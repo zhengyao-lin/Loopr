@@ -21,12 +21,12 @@ y.tab.c : edge_asm.y
 	yacc -dv edge_asm.y
 lex.yy.c : edge_asm.l edge_asm.y y.tab.h
 	lex edge_asm.l
-y.tab.o: y.tab.c ../../Includes/Assembly.h ../../Includes/MEM.h ../../Includes/EBS.h
+y.tab.o: y.tab.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h
 	$(CC) -c -g $*.c $(INCLUDES)
-lex.yy.o: lex.yy.c ../../Includes/Assembly.h ../../Includes/MEM.h ../../Includes/EBS.h
+lex.yy.o: lex.yy.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h
 	$(CC) -c -g $*.c $(INCLUDES)
 .c.o:
 	$(CC) $(CFLAGS) $*.c $(INCLUDES)
 
-create.o: create.c ../../Includes/Assembly.h ../../Includes/MEM.h ../../Includes/EBS.h 
-string.o: string.c ../../Includes/Assembly.h ../../Includes/MEM.h ../../Includes/EBS.h ../../Includes/UTL.h
+create.o: create.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h 
+string.o: string.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h ../../Includes/UTL.h

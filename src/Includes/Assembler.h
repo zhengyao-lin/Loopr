@@ -22,14 +22,14 @@ typedef enum {
 typedef struct Constant_tag {
 	ConstantType type;
 	union {
-		Edge_Char		*string_value;
-		Edge_Char		char_value;
-		Edge_Byte		byte_value;
-		Edge_Int16		int16_value;
-		Edge_Int32		int32_value;
-		Edge_Int64		int64_value;
-		Edge_Single		single_value;
-		Edge_Double		double_value;
+		Loopr_Char		*string_value;
+		Loopr_Char		char_value;
+		Loopr_Byte		byte_value;
+		Loopr_Int16		int16_value;
+		Loopr_Int32		int32_value;
+		Loopr_Int64		int64_value;
+		Loopr_Single		single_value;
+		Loopr_Double		double_value;
 	} u;
 
 	int line_number;
@@ -38,8 +38,8 @@ typedef struct Constant_tag {
 
 typedef struct Bytecode_tag {
 	char *name;
-	Edge_Boolean has_fixed;
-	Edge_Byte code;
+	Loopr_Boolean has_fixed;
+	Loopr_Byte code;
 
 	int line_number;
 	struct Bytecode_tag *next;

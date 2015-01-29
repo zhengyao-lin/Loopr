@@ -1,7 +1,7 @@
 #include <stdlib.h>
-#include "EBS.h"
+#include "LBS.h"
 #include "MEM.h"
-#include "Assembly.h"
+#include "Assembler.h"
 
 int
 get_current_line_number()

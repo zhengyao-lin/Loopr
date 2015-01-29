@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
-#include "EBS.h"
-#include "Assembly.h"
+#include "LBS.h"
+#include "Assembler.h"
 #define YYDEBUG 1
 %}
 %union {

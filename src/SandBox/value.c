@@ -26,6 +26,8 @@ TypeInfo Loopr_Type_Info[] = {
 	{"f8",		"Single",		sizeof(Loopr_Single)},
 	{"f16",		"Double",		sizeof(Loopr_Double)},
 	{"str",		"String",		sizeof(Loopr_Char *)},
+
+	{"obj",		"Object",		sizeof(Loopr_Value *)},
 };
 
 Loopr_Byte *
@@ -100,11 +102,26 @@ Loopr_create_null()
 }
 
 Loopr_Value *
+Loopr_create_object(Loopr_Value *orig)
+{
+	Loopr_Value *ret;
+
+	if (orig && orig->table->type == LPR_OBJECT) {
+		return orig;
+	}
+
+	ret = Loopr_alloc_value(LPR_OBJECT);
+	ret->u.object_value = orig;
+
+	return ret;
+}
+
+Loopr_Value *
 Loopr_get_init_value(Loopr_BasicType type)
 {
 	Loopr_Value *value;
 
-	switch ((int)type) {
+	switch (type) {
 		case LPR_BOOLEAN:
 		case LPR_CHAR:
 		case LPR_SBYTE:

@@ -82,8 +82,7 @@ Asm_create_identifier(char *str)
 {
     char *new_str;
 
-    new_str = ASM_malloc(strlen(str) + 1);
-
+    new_str = MEM_malloc(strlen(str) + 1);
     strcpy(new_str, str);
 
     return new_str;

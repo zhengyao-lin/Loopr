@@ -15,12 +15,12 @@ $(TARGET):$(OBJS)
 
 clean:
 	rm -f *.o lex.yy.c y.tab.c y.tab.h y.output *~
-y.tab.h : edge_asm.y
-	yacc -dv edge_asm.y
-y.tab.c : edge_asm.y
-	yacc -dv edge_asm.y
-lex.yy.c : edge_asm.l edge_asm.y y.tab.h
-	lex edge_asm.l
+y.tab.h : loopr_asm.y
+	yacc -dv loopr_asm.y
+y.tab.c : loopr_asm.y
+	yacc -dv loopr_asm.y
+lex.yy.c : loopr_asm.l loopr_asm.y y.tab.h
+	lex loopr_asm.l
 y.tab.o: y.tab.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h
 	$(CC) -c -g $*.c $(INCLUDES)
 lex.yy.o: lex.yy.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h

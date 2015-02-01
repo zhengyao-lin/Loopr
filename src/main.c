@@ -12,9 +12,9 @@ ByteContainer *Gencode_compile(Asm_Compiler *compiler);
 
 int main(int argc, char **argv)
 {
+	FILE *fp = NULL;
 	setlocale(LC_ALL, "");
 #if 1
-	FILE *fp = NULL;
 
 	if (argc >= 2) {
 		fp = fopen(argv[1], "r");
@@ -26,9 +26,16 @@ int main(int argc, char **argv)
 	}
 
 	ByteContainer *container = Gencode_compile(Asm_compile_file(fp));
-	Loopr_execute(Coding_init_exe_env(container, LPR_ANYTHING));
+	ExeEnvironment *env = Coding_init_exe_env(container, LPR_ANYTHING);
+
+	Loopr_execute(env);
 #endif
 
+Walle_reset_mark();
+Walle_gcollect();
+Walle_dispose_environment(env);
+MEM_free(container);
+MEM_dump_blocks(stderr);
 #if 0
 	/* testbed */
 

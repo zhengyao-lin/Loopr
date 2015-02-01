@@ -15,6 +15,7 @@ Asm_alloc_constant(ConstantType type)
 	Constant *ret;
 
 	ret = ASM_malloc(sizeof(Constant));
+	ASM_fill(ret->u, NULL_VALUE);
 	ret->type = type;
 	ret->next = NULL;
 	ret->line_number = get_current_line_number();
@@ -60,11 +61,12 @@ Asm_chain_bytecode(Bytecode *list, char *identifier)
 }
 
 Statement *
-Asm_create_statement(Bytecode *code, Constant *const_opt)
+Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 {
 	Statement *ret;
 
 	ret = ASM_malloc(sizeof(Statement));
+	ret->label = label;
 	ret->bytecode = code;
 	ret->constant = const_opt;
 	ret->line_number = get_current_line_number();
@@ -75,7 +77,7 @@ Asm_create_statement(Bytecode *code, Constant *const_opt)
 StatementList *
 Asm_create_statement_list(Statement *st)
 {
-	StatementList *ret;
+	StatementList *ret = NULL;
 
 	ret = ASM_malloc(sizeof(StatementList));
 	ret->statement = st;
@@ -84,7 +86,7 @@ Asm_create_statement_list(Statement *st)
 }
 
 StatementList *
-Asm_chain_statement_list(StatementList *list, Statement *st)
+Asm_chain_statement_list(Statement *st, StatementList *list)
 {
 	StatementList *pos;
 

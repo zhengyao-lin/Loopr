@@ -16,7 +16,9 @@ typedef enum {
 	LPR_LD_LOC,
 
 	LPR_INIT_LOC,
-	LPR_CONVERT,
+	LPR_CONVERT, /* MLES */
+	LPR_BOXING,
+	LPR_UNBOXING,
 
 	LPR_POP_BYTE,
 	LPR_POP_FLOAT,
@@ -30,6 +32,7 @@ typedef enum {
 	LPR_SUB_BYTE,
 	LPR_MUL_BYTE,
 	LPR_DIV_BYTE,
+
 	LPR_JUMP,
 	LPR_EXIT,
 	LPR_CODE_PLUS_1
@@ -84,6 +87,9 @@ typedef enum {
 	/* Multibyte */
 	LPR_STRING,
 
+	/* Pointer Byte */
+	LPR_OBJECT,
+
 	LPR_BASIC_TYPE_PLUS_1
 } Loopr_BasicType;
 
@@ -91,31 +97,32 @@ typedef struct Loopr_InfoTable_tag {
 	Loopr_BasicType type;
 } Loopr_InfoTable;
 
-typedef union {
-	Loopr_Boolean 	boolean_value;
-	Loopr_Char		char_value;
-
-	Loopr_SByte		sbyte_value;
-	Loopr_Int16		int16_value;
-	Loopr_Int32		int32_value;
-	Loopr_Int64		int64_value;
-
-	Loopr_Byte		byte_value;
-	Loopr_UInt16		uint16_value;
-	Loopr_UInt32		uint32_value;
-	Loopr_UInt64		uint64_value;
-
-	Loopr_Single		single_value;
-	Loopr_Double		double_value;
-
-	Loopr_Char		*string_value;
-} Loopr_ValueUnion;
-
 typedef struct Loopr_Value_tag {
-	Loopr_InfoTable *table;
-	Loopr_ValueUnion u;
-
 	Loopr_Boolean marked:1;
+
+	Loopr_InfoTable *table;
+	union {
+		Loopr_Boolean 			boolean_value;
+		Loopr_Char				char_value;
+
+		Loopr_SByte				sbyte_value;
+		Loopr_Int16				int16_value;
+		Loopr_Int32				int32_value;
+		Loopr_Int64				int64_value;
+
+		Loopr_Byte				byte_value;
+		Loopr_UInt16			uint16_value;
+		Loopr_UInt32			uint32_value;
+		Loopr_UInt64			uint64_value;
+
+		Loopr_Single			single_value;
+		Loopr_Double			double_value;
+
+		Loopr_Char				*string_value;
+
+		struct Loopr_Value_tag	*object_value;
+	} u;
+
 	struct Loopr_Value_tag *prev;
 	struct Loopr_Value_tag *next;
 } Loopr_Value;
@@ -125,3 +132,10 @@ typedef struct Loopr_Stack_tag {
 	Loopr_Int32 stack_pointer;
 	Loopr_Value **value;
 } Loopr_Stack;
+
+typedef struct ByteContainer_tag {
+	Loopr_Int32 next;
+	Loopr_Int32 alloc_size;
+	Loopr_Int32 stack_size;
+	Loopr_Byte *code;
+} ByteContainer;

@@ -12,6 +12,8 @@ ByteInfo Loopr_Byte_Info[] = {
 
 	{"initloc",	0,	0},
 	{"conv",	1,	0},
+	{"bx",		1,	0},
+	{"unbx",	1,	0},
 
 	{"popb",	1,	-1},
 	{"popf",	1,	-1},

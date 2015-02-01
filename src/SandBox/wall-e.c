@@ -99,6 +99,20 @@ Walle_reset_mark()
 }
 
 void
+Walle_mark_all()
+{
+	Loopr_Value *header;
+	Loopr_Value *pos;
+
+	header = Walle_get_header();
+	for (pos = header; pos; pos = pos->next) {
+		pos->marked = LPR_True;
+	}
+
+	return;
+}
+
+void
 Walle_dispose_value(Loopr_Value **target)
 {
 	switch ((*target)->table->type) {
@@ -136,8 +150,6 @@ Walle_gcollect()
 		(*Walle_get_marker())();
 	}
 
-	/*printf("start collecting\n");
-	printf("alloc'd: %d\n", Walle_get_alloc_size());*/
 	for (pos = header; pos;) {
 		if (pos->marked != LPR_True) {
 			tmp = pos->next;
@@ -163,4 +175,18 @@ Walle_check_mem()
 	}
 
 	return;
+}
+
+void
+Walle_dispose_environment(ExeEnvironment *env)
+{
+	int i;
+
+	MEM_free(env->code);
+	MEM_free(env->stack.value);
+	for (i = 0; i < env->local_variable_count; i++) {
+		MEM_free(env->local_variable[i].identifier);
+	}
+	MEM_free(env->local_variable);
+	MEM_free(env);
 }

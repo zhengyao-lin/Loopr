@@ -41,6 +41,8 @@
 	: (stack).value[(stack).stack_pointer + (offset)]->u.double_value)
 #define ST_STRING(stack, offset) \
 	((stack).value[(stack).stack_pointer + (offset)]->u.string_value)
+#define ST_OBJECT(stack, offset) \
+	((stack).value[(stack).stack_pointer + (offset)]->u.object_value)
 
 #define ST_WRITE(stack, offset, r) \
 	((stack).value[(stack).stack_pointer + (offset)] = r)
@@ -72,6 +74,8 @@
 		   >> (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8)
 
 #define get_visual_string(src) ((src) ? (src)->u.string_value : NULL_VISUAL)
+#define is_unsigned(type) \
+	(type % 2 != 0 ? LPR_True : LPR_False)
 
 Loopr_Char *
 chain_string(Loopr_Value *str1, Loopr_Value *str2)
@@ -103,7 +107,6 @@ Private_do_push_byte(Loopr_BasicType basic_type, Loopr_Byte *code, int *offset)
 	Loopr_Value *ret;
 
 	ret = Loopr_alloc_value(basic_type);
-
 	Loopr_byte_deserialize(&ret->u.int64_value,
 						  code, Loopr_Type_Info[basic_type].size);
 	*offset = Loopr_Type_Info[basic_type].size;
@@ -221,20 +224,32 @@ Private_expand_stack(Loopr_Stack *orig, int resize)
 }
 
 void
+Private_mark_value(Loopr_Value *obj)
+{
+	if (!obj) {
+		return;
+	}
+
+	obj->marked = LPR_True;
+	switch (obj->table->type) {
+		case LPR_OBJECT:
+			Private_mark_value(obj->u.object_value);
+	}
+
+	return;
+}
+
+void
 Private_walle_marker(ExeEnvironment *env)
 {
 	int i;
 
 	for (i = 0; i < env->local_variable_count; i++) {
-		if (env->local_variable[i].value) {
-			env->local_variable[i].value->marked = LPR_True;
-		}
+		Private_mark_value(env->local_variable[i].value);
 	}
 
 	for (i = 0; i <= env->stack.stack_pointer; i++) {
-		if (env->stack.value[i]) {
-			env->stack.value[i]->marked = LPR_True;
-		}
+		Private_mark_value(env->stack.value[i]);
 	}
 
 	return;
@@ -299,8 +314,25 @@ Loopr_execute(ExeEnvironment *env)
 				pc += 3 + strlen(identifier);
 				break;
 			}
+			case LPR_BOXING: {
+				ST(env->stack, 0) = Loopr_create_object(ST(env->stack, 0));
+				pc++;
+				break;
+			}
+			case LPR_UNBOXING: {
+				ST(env->stack, 0) = (ST(env->stack, 0) ? ST_OBJECT(env->stack, 0) : NULL);
+				pc++;
+				break;
+			}
 			case LPR_POP_BYTE: {
-				printf("#pop_byte: %ld\n", GET_BIT(ST_INT64(env->stack, 0), ST_TYPE(env->stack, 0)));
+				Loopr_BasicType type = ST_TYPE(env->stack, 0);
+				if (is_unsigned(type)) {
+					printf("#pop_%s: %lu\n", Loopr_Type_Info[type].assembly_name
+										   , GET_BIT(ST_UINT64(env->stack, 0), type));
+				} else {
+					printf("#pop_%s: %ld\n", Loopr_Type_Info[type].assembly_name
+										   , GET_BIT(ST_INT64(env->stack, 0), type));
+				}
 				env->stack.stack_pointer--;
 				pc++;
 				break;
@@ -375,7 +407,10 @@ Loopr_execute(ExeEnvironment *env)
 				break;
 			}
 			case LPR_JUMP: {
-				pc = env->code[pc + 1];
+				Loopr_Int32 jpc;
+				Loopr_byte_deserialize(&jpc, &env->code[pc + 1], sizeof(Loopr_Int32));
+				pc = jpc;
+				printf("#jump to: %d\n", pc);
 				break;
 			}
 			case LPR_EXIT: {

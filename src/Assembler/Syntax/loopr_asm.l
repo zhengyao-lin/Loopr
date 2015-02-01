@@ -1,6 +1,12 @@
 
+PM				[+-]
 DIGIT			[0-9]
+HEX				[a-fA-F0-9]
+OCT				[0-7]
 LETTER			[a-zA-Z_]
+ISUFFIX			(l|L|s|S|u|U)+
+IPREFIX			(#)
+FSUFFIX			(l|L)
 
 %{
 #include <stdio.h>
@@ -18,7 +24,8 @@ yywrap(void)
 
 int yyerror(char* msg)
 {
-	printf("Syntax Error: at line %d\n", Asm_get_current_compiler()->current_line_number);
+	printf("Syntax Error: line %d: %s\n", Asm_get_current_compiler()->current_line_number
+										, yytext);
 }
 
 static void
@@ -27,15 +34,35 @@ increment_line_number(void)
     Asm_get_current_compiler()->current_line_number++;
 }
 
+typedef enum {
+	ASM_DEC,
+	ASM_HEX,
+	ASM_OCT
+} DIGIT_TYPE;
+
 Loopr_Boolean st_character_literal_state;
 %}
 %start C_COMMENT CC_COMMENT STRING_LITERAL_STATE
 %%
  /* Punctuations */
+<INITIAL>"true" {
+	Constant *constant;
+	constant = Asm_alloc_constant(CONST_BYTE);
+	constant->u.byte_value = LPR_True;
+	yylval.constant = constant;
+	return TRUE_C;
+}
+<INITIAL>"false" {
+	Constant *constant;
+	constant = Asm_alloc_constant(CONST_BYTE);
+	constant->u.byte_value = LPR_False;
+	yylval.constant = constant;
+	return FALSE_C;
+}
+<INITIAL>":"		return COLON;
 <INITIAL>","		return COMMA;
 <INITIAL>"("		return LP;
 <INITIAL>")"		return RP;
-<INITIAL>";"		return SEMICOLON;
 <INITIAL>"."		return DOT;
 
  /* Identifiers and Constants */
@@ -43,69 +70,27 @@ Loopr_Boolean st_character_literal_state;
 	yylval.identifier = Asm_create_identifier(yytext);
 	return IDENTIFIER;
 }
-<INITIAL>[1-9][0-9]* {
-	Constant *constant = Asm_alloc_constant(CONST_INT32);
-	sscanf(yytext, "%d", &constant->u.int32_value);
-	yylval.constant = constant;
-	return INT32_LITERAL;
+
+<INITIAL>{PM}?{IPREFIX}?"0"{OCT}+{ISUFFIX}? {
+	get_digit_const("%lo");
+	return DIGIT_LITERAL;
 }
-<INITIAL>"0"[xX][0-9a-fA-F]+ {
-	Constant *constant = Asm_alloc_constant(CONST_INT32);
-	sscanf(yytext, "%x", &constant->u.int32_value);
-	yylval.constant = constant;
-	return INT32_LITERAL;
+<INITIAL>{PM}?{IPREFIX}?"0"[xX]{HEX}+{ISUFFIX}? {
+	get_digit_const("%lx");
+	return DIGIT_LITERAL;
 }
-<INITIAL>"0"[0-7]+ {
-	Constant *constant = Asm_alloc_constant(CONST_INT32);
-	sscanf(yytext, "%o", &constant->u.int32_value);
-	yylval.constant = constant;
-	return INT32_LITERAL;
+<INITIAL>{PM}?{IPREFIX}?{DIGIT}+{ISUFFIX}? {
+	get_digit_const("%lu");
+	return DIGIT_LITERAL;
 }
-<INITIAL>"0" {
-	Constant *constant = Asm_alloc_constant(CONST_INT32);
-	constant->u.int32_value = 0;
-	yylval.constant = constant;
-	return INT32_LITERAL;
-}
-<INITIAL>[1-9][0-9]*[lL] {
-	Constant *constant = Asm_alloc_constant(CONST_INT64);
-	sscanf(yytext, "%ld", &constant->u.int64_value);
-	yylval.constant = constant;
-	return INT64_LITERAL;
-}
-<INITIAL>"0"[xX][0-9a-fA-F]+[lL] {
-	Constant *constant = Asm_alloc_constant(CONST_INT64);
-	sscanf(yytext, "%lx", &constant->u.int64_value);
-	yylval.constant = constant;
-	return INT64_LITERAL;
-}
-<INITIAL>"0"[lL] {
-	Constant *constant = Asm_alloc_constant(CONST_INT64);
-	constant->u.int64_value = 0;
-	yylval.constant = constant;
-	return INT64_LITERAL;
-}
-<INITIAL>[0-9]+\.[0-9]+[lL] {
-	Constant *constant = Asm_alloc_constant(CONST_DOUBLE);
-	sscanf(yytext, "%lf", &constant->u.double_value);
-	yylval.constant = constant;
-	return DOUBLE_LITERAL;
-}
-<INITIAL>[0-9]+\.[0-9]{6,}+ {
-	Constant *constant = Asm_alloc_constant(CONST_DOUBLE);
-	sscanf(yytext, "%lf", &constant->u.double_value);
-	yylval.constant = constant;
-	return DOUBLE_LITERAL;
-}
-<INITIAL>[0-9]+\.[0-9]{1,5}+ {
-	Constant *constant = Asm_alloc_constant(CONST_SINGLE);
-	sscanf(yytext, "%f", &constant->u.single_value);
-	yylval.constant = constant;
-	return SINGLE_LITERAL;
+
+<INITIAL>[0-9]+\.[0-9]+{FSUFFIX}? {
+	get_float_const();
+	return FLOAT_LITERAL;
 }
 
  /* Invisible Tokens */
-<INITIAL>[ \t]		;
+<INITIAL>[ \t\v\f]		;
 <INITIAL>[\r\n] {
 	increment_line_number();
 	return NEXT_LINE;
@@ -114,15 +99,20 @@ Loopr_Boolean st_character_literal_state;
  /* Comments */
 <INITIAL>"/*"     	BEGIN C_COMMENT;
 <INITIAL>"//"     	BEGIN CC_COMMENT;
+<INITIAL>";"     	BEGIN CC_COMMENT;
 
-<C_COMMENT>[\r\n]	increment_line_number();
+<C_COMMENT>[\r\n] {
+	increment_line_number();
+	return NEXT_LINE;
+}
 <C_COMMENT>"*/"		BEGIN INITIAL;
-<C_COMMENT><<EOF>>	abort();
+<C_COMMENT><<EOF>>	DBG_panic(("EOF in comment\n"));
 <C_COMMENT>.		;
 
-<CC_COMMENT>\n {
+<CC_COMMENT>[\r\n] {
 	increment_line_number();
 	BEGIN INITIAL;
+	return NEXT_LINE;
 }
 <CC_COMMENT><<EOF>>	BEGIN INITIAL;
 <CC_COMMENT>.		;
@@ -186,3 +176,77 @@ Loopr_Boolean st_character_literal_state;
     Asm_add_string_literal(yytext[0]);
 }
 %%
+
+void
+get_float_const()
+{
+	Constant *constant;
+	char suffix = yytext[yyleng-1];
+
+	switch (suffix) {
+		case 'l':
+		case 'L':
+			constant = Asm_alloc_constant(CONST_DOUBLE);
+			sscanf(yytext, "%lf", &constant->u.double_value);
+			yylval.constant = constant;
+			break;
+		default:
+			constant = Asm_alloc_constant(CONST_SINGLE);
+			sscanf(yytext, "%f", &constant->u.single_value);
+			yylval.constant = constant;
+			break;
+	}
+
+	return;
+}
+
+void
+get_digit_const(char *controller)
+{
+	Constant *constant;
+	ConstantType type = 0;
+	int p = yyleng - 1;
+	char suffix = yytext[p];
+
+	if (yytext[0] == '#') {
+		type = CONST_BYTE;
+		goto ENDLOOP;
+	}
+
+LOOP:
+	switch (suffix) {
+		case 'l':
+		case 'L':
+			type += CONST_INT64;
+			break;
+		case 's':
+		case 'S':
+			type += CONST_INT16;
+			break;
+		case 'u':
+		case 'U':
+			type++;
+			break;
+		default:
+			if (type <= 1) {
+				type += CONST_INT32;
+				goto ENDLOOP;
+			} else if (type > CONST_UINT64) {
+				DBG_panic(("Too much digit  affix\n"));
+			} else {
+				goto ENDLOOP;
+			}
+	}
+	if (p > 0) {
+		p--;
+		suffix = yytext[p];
+		goto LOOP;
+	}
+
+ENDLOOP:
+	constant = Asm_alloc_constant(type);
+	sscanf(yytext, controller, &constant->u.int64_value);
+	yylval.constant = constant;
+
+	return;
+}

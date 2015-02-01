@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include "LBS.h"
+#include "MEM.h"
 #include "Assembler.h"
 #define YYDEBUG 1
 %}
@@ -11,16 +12,16 @@
 	Constant		*constant;
 	StatementList	*statement_list;
 }
-%token COMMA LP RP SEMICOLON DOT NEXT_LINE
+%token COLON COMMA LP RP DOT NEXT_LINE
 	   NULL_LITERAL
 %token <identifier>		IDENTIFIER
 %token <constant>		CHAR_LITERAL
-%token <constant>		INT32_LITERAL
-%token <constant>		INT64_LITERAL
-%token <constant>		DOUBLE_LITERAL
-%token <constant>		SINGLE_LITERAL
+%token <constant>		DIGIT_LITERAL
+%token <constant>		FLOAT_LITERAL
 %token <constant>		STRING_LITERAL
+%token <constant>		TRUE_C FALSE_C
 
+%type <identifier> label
 %type <bytecode> dot_bytecode
 %type <constant> constant constant_list constant_list_opt
 %type <statement> statement
@@ -45,21 +46,20 @@ dot_bytecode
 		$$ = Asm_chain_bytecode($1, $3);
 	}
 	;
-
 constant
 	: CHAR_LITERAL
-	| INT32_LITERAL
-	| INT64_LITERAL
-	| DOUBLE_LITERAL
-	| SINGLE_LITERAL
+	| DIGIT_LITERAL
+	| FLOAT_LITERAL
 	| STRING_LITERAL
-	| LP INT32_LITERAL RP
+	| TRUE_C
+	| FALSE_C
+	| IDENTIFIER
 	{
-		($2)->type = CONST_BYTE;
-		$$ = $2;
+		Constant *constant = Asm_alloc_constant(CONST_STRING);
+		constant->u.string_value = $1;
+		$$ = constant;
 	}
 	;
-
 constant_list
 	: constant
 	| constant_list COMMA constant
@@ -67,7 +67,6 @@ constant_list
 		$$ = Asm_chain_constant($1, $3);
 	}
 	;
-
 constant_list_opt
 	: /* NULL */
 	{
@@ -75,7 +74,6 @@ constant_list_opt
 	}
 	| constant_list
 	;
-
 next_line_list
 	: NEXT_LINE
 	| next_line_list NEXT_LINE
@@ -84,26 +82,30 @@ next_line_list_opt
 	: /* NULL */
 	| next_line_list
 	;
-
-statement
-	: dot_bytecode constant_list_opt
+label
+	: IDENTIFIER COLON next_line_list_opt
 	{
-		$$ = Asm_create_statement($1, $2);
-	}
-	| dot_bytecode constant_list_opt SEMICOLON
-	{
-		$$ = Asm_create_statement($1, $2);
+		$$ = $1;
 	}
 	;
-
+statement
+	: label dot_bytecode constant_list_opt
+	{
+		$$ = Asm_create_statement($1, $2, $3);
+	}
+	| dot_bytecode constant_list_opt
+	{
+		$$ = Asm_create_statement(NULL, $1, $2);
+	}
+	;
 statement_list
-	: statement next_line_list_opt
+	: statement next_line_list
 	{
 		$$ = Asm_create_statement_list($1);
 	}
-	| statement next_line_list_opt statement_list
+	| statement next_line_list statement_list
 	{
-		$$ = Asm_chain_statement_list($3, $1);
+		$$ = Asm_chain_statement_list($1, $3);
 	}
 	;
 %%

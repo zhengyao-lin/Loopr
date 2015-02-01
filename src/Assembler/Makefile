@@ -3,6 +3,7 @@ CFLAGS = -c -g -DDEBUG -Wall -ansi -pedantic -Wswitch-enum
 OBJS = \
 	Syntax/Syntax.o \
 	interface.o \
+	label.o \
 	gencode.o
 
 INCLUDES = \
@@ -19,9 +20,8 @@ clean:
 	-rm -f *.o *~ test
 Syntax/Syntax.o:
 	cd Syntax; $(MAKE);
-#test:
-#	$(CC) -o test $(OBJS)
 
 interface.o: interface.c ../Includes/LBS.h ../Includes/Assembler.h
 gencode.o: gencode.c ../Includes/LBS.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/Assembler.h ../SandBox/SandBox_pri.h
+label.o: label.c ../Includes/LBS.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/Assembler.h ../SandBox/SandBox_pri.h
 #main.o: main.c Syntax/syntax.h global.h

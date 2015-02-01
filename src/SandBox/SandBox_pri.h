@@ -52,13 +52,6 @@ typedef struct TypeInfo_tag {
 	Loopr_Int32 size;		
 } TypeInfo;
 
-typedef struct ByteContainer_tag {
-	Loopr_Int32 next;
-	Loopr_Int32 alloc_size;
-	Loopr_Int32 stack_size;
-	Loopr_Byte *code;
-} ByteContainer;
-
 typedef struct LocalVariable_tag {
 	char *identifier;
 	Loopr_Value *value;
@@ -90,6 +83,7 @@ Loopr_InfoTable *Loopr_alloc_info_table(Loopr_BasicType type);
 Loopr_Value *Loopr_alloc_value(Loopr_BasicType type);
 Loopr_Value *Loopr_create_string(Loopr_Byte *data, int *offset);
 Loopr_Value *Loopr_create_null();
+Loopr_Value *Loopr_create_object(Loopr_Value *orig);
 Loopr_Value *Loopr_get_init_value(Loopr_BasicType type);
 
 /* coding.c */
@@ -112,9 +106,12 @@ Walle_Marker Walle_get_marker();
 
 void Walle_add_object(Loopr_Value *v);
 void Walle_reset_mark();
+void Walle_mark_all();
 void Walle_dispose_value(Loopr_Value **target);
 void Walle_gcollect();
 void Walle_check_mem();
+
+void Walle_dispose_environment(ExeEnvironment *env);
 
 extern ByteInfo Loopr_Byte_Info[];
 extern TypeInfo Loopr_Type_Info[];

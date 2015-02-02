@@ -27,6 +27,13 @@ struct ConstTypeMapping_tag {
 	{CONST_STRING,	LPR_STRING},
 };
 
+ByteInfo Loopr_CR_Info[] = {
+	{"dummy",			0,	0},
+
+	{"entry",			0,	0},
+	{"maxstack",		0,	0},
+};
+
 Loopr_Byte
 Gencode_search_code(char *name)
 {
@@ -35,6 +42,21 @@ Gencode_search_code(char *name)
 
 	for (i = 1; i < len; i++) {
 		if (!strcmp(name, Loopr_Byte_Info[i].assembly_name)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+Loopr_Byte
+Gencode_search_CR(char *name)
+{
+	Loopr_Byte i;
+	Loopr_Byte len = LCR_CODE_PLUS_1;
+
+	for (i = 1; i < len; i++) {
+		if (!strcmp(name, Loopr_CR_Info[i].assembly_name)) {
 			return i;
 		}
 	}
@@ -160,11 +182,41 @@ Gencode_statement(ByteContainer *env, Statement *list)
 	int nullv = 0x0;
 	Loopr_Byte code;
 
-	code = Gencode_search_code(list->bytecode->name);
-
 	if (list->label) {
 		Label_add(list->label, env->next);
 		MEM_free(list->label);
+		return;
+	}
+
+	if (list->bytecode->name) {
+		code = Gencode_search_code(list->bytecode->name);
+	} else {
+		if (list->bytecode->next) {
+			code = Gencode_search_CR(list->bytecode->next->name);
+			switch (code) {
+				case LCR_ENTRANCE:
+					env->entrance = env->next;
+					break;
+				case LCR_MAX_STACK:
+					env->hinted = LPR_True;
+					if (list->constant) {
+						env->stack_size = list->constant->u.int32_value;
+					} else {
+						DBG_panic(("line %d: in CR code \"%s\": too few arguments\n",
+								   list->line_number,
+								   Loopr_CR_Info[LCR_MAX_STACK].assembly_name));
+					}
+					break;
+				case (Loopr_Byte)-1:
+					DBG_panic(("line %d: Unknown CR code \"%s\"\n", list->line_number,
+																	list->bytecode->next->name));
+					break;
+			}
+			MEM_free(list->bytecode->next->name);
+			return;
+		} else {
+			DBG_panic(("line %d: empty compiler reference code\n", list->line_number));
+		}
 	}
 
 	switch (code) {
@@ -216,7 +268,7 @@ Gencode_compile(Asm_Compiler *compiler)
 	ByteContainer *container;
 
 	container = Coding_init_coding_env();
-	Gencode_statement_list(container, compiler->list);
+	Gencode_statement_list(container, compiler->top_level);
 
 	return container;
 }

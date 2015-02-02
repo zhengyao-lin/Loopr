@@ -77,12 +77,25 @@ Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 StatementList *
 Asm_create_statement_list(Statement *st)
 {
+	extern char *yytext;
 	StatementList *ret = NULL;
 
 	ret = ASM_malloc(sizeof(StatementList));
 	ret->statement = st;
 
 	return ret;
+}
+
+StatementList *
+Asm_cat_statement_list(StatementList *list, StatementList *addin)
+{
+	StatementList *pos;
+
+	for (pos = list; pos && pos->next; pos = pos->next)
+		;
+	pos->next = addin;
+
+	return pos;
 }
 
 StatementList *

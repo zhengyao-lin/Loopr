@@ -1,3 +1,6 @@
+.maxstack 5
+.entry
+
 initloc.f8 "float1"
 initloc.f16 "double1"
 initloc.null "integer1"
@@ -44,7 +47,6 @@ popf
 
 //jmp 40;
 loop1:
-jmp loop2
 
 ldb.i32 2000
 ldb.i32 5
@@ -56,6 +58,9 @@ addb
 subb
 mulb
 divb
+popb
+
+ldb.i32 #-12
 popb
 
 loop2:

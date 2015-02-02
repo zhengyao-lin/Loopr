@@ -24,7 +24,7 @@ Asm_init_compiler()
 	Asm_Compiler *ret;
 
 	ret = ASM_malloc(sizeof(Asm_Compiler));
-	ret->list = NULL;
+	ret->top_level = NULL;
 	ret->current_line_number = 1;
 
 	return ret;
@@ -46,6 +46,7 @@ Asm_compile_file(FILE *fp)
 		fprintf(stderr, "UNEXPECTED ERROR!\n");
 		exit(0);
 	}
+
 	Asm_reset_string_literal_buffer();
 
 	return compiler;

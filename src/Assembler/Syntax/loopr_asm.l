@@ -61,6 +61,8 @@ Loopr_Boolean st_character_literal_state;
 }
 <INITIAL>":"		return COLON;
 <INITIAL>","		return COMMA;
+<INITIAL>"{"		return LB;
+<INITIAL>"}"		return RB;
 <INITIAL>"("		return LP;
 <INITIAL>")"		return RP;
 <INITIAL>"."		return DOT;
@@ -71,15 +73,15 @@ Loopr_Boolean st_character_literal_state;
 	return IDENTIFIER;
 }
 
-<INITIAL>{PM}?{IPREFIX}?"0"{OCT}+{ISUFFIX}? {
+<INITIAL>{IPREFIX}?{PM}?"0"{OCT}+{ISUFFIX}? {
 	get_digit_const("%lo");
 	return DIGIT_LITERAL;
 }
-<INITIAL>{PM}?{IPREFIX}?"0"[xX]{HEX}+{ISUFFIX}? {
+<INITIAL>{IPREFIX}?{PM}?"0"[xX]{HEX}+{ISUFFIX}? {
 	get_digit_const("%lx");
 	return DIGIT_LITERAL;
 }
-<INITIAL>{PM}?{IPREFIX}?{DIGIT}+{ISUFFIX}? {
+<INITIAL>{IPREFIX}?{PM}?{DIGIT}+{ISUFFIX}? {
 	get_digit_const("%lu");
 	return DIGIT_LITERAL;
 }
@@ -206,10 +208,12 @@ get_digit_const(char *controller)
 	Constant *constant;
 	ConstantType type = 0;
 	int p = yyleng - 1;
+	int offset = 0;
 	char suffix = yytext[p];
 
 	if (yytext[0] == '#') {
 		type = CONST_BYTE;
+		offset = 1;
 		goto ENDLOOP;
 	}
 
@@ -245,7 +249,7 @@ LOOP:
 
 ENDLOOP:
 	constant = Asm_alloc_constant(type);
-	sscanf(yytext, controller, &constant->u.int64_value);
+	sscanf(yytext + offset, controller, &constant->u.int64_value);
 	yylval.constant = constant;
 
 	return;

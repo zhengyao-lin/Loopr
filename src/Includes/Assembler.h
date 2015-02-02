@@ -75,7 +75,7 @@ typedef struct StatementList_tag {
 } StatementList;
 
 typedef struct Asm_Compiler_tag {
-	StatementList *list;
+	StatementList *top_level;
 	int current_line_number;
 } Asm_Compiler;
 
@@ -110,6 +110,7 @@ Bytecode *Asm_create_bytecode(char *identifier);
 Bytecode *Asm_chain_bytecode(Bytecode *list, char *identifier);
 Statement *Asm_create_statement(char *label, Bytecode *code, Constant *const_opt);
 StatementList *Asm_create_statement_list(Statement *st);
+StatementList *Asm_cat_statement_list(StatementList *list, StatementList *addin);
 StatementList *Asm_chain_statement_list(Statement *st, StatementList *list);
 
 /* string.c */

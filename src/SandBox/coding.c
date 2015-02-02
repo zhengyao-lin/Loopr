@@ -1,6 +1,7 @@
 #include <string.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
+#include "DBG.h"
 
 ByteInfo Loopr_Byte_Info[] = {
 	{"dummy",	0,	0},
@@ -48,7 +49,9 @@ Coding_init_coding_env(void)
 	env = MEM_malloc(sizeof(ByteContainer));
 	env->next = 0;
 	env->alloc_size = 0;
+	env->hinted = LPR_False;
 	env->stack_size = 0;
+	env->entrance = 0;
 	env->code = NULL;
 
 	return env;
@@ -78,7 +81,9 @@ Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args
 {
 	if (check_is_code(code)) {
 		Coding_byte_cat(env, &code, 1);
-		env->stack_size += check_is_negative(Loopr_Byte_Info[code].stack_regulator);
+		if (!env->hinted) {
+			env->stack_size += check_is_negative(Loopr_Byte_Info[code].stack_regulator);
+		}
 	}
 	Coding_byte_cat(env, args, args_count);
 
@@ -93,9 +98,12 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 
 	ret = MEM_malloc(sizeof(ExeEnvironment));
 	ret->wflag = wflag;
-	ret->entrance = 0;
+	ret->entrance = env->entrance;
 	ret->code_length = env->alloc_size;
 	ret->code = env->code;
+	if (env->stack_size < 0) {
+		DBG_panic(("negative stack size\n"));
+	}
 	stack_value = MEM_malloc(sizeof(Loopr_Value *) * (env->stack_size + 1));
 
 	ret->stack.alloc_size = env->stack_size + 1;

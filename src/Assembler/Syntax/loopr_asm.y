@@ -12,8 +12,8 @@
 	Constant		*constant;
 	StatementList	*statement_list;
 }
-%token COLON COMMA LP RP DOT NEXT_LINE
-	   NULL_LITERAL
+%token COLON COMMA LB RB LP RP DOT
+	   NEXT_LINE NULL_LITERAL
 %token <identifier>		IDENTIFIER
 %token <constant>		CHAR_LITERAL
 %token <constant>		DIGIT_LITERAL
@@ -22,20 +22,31 @@
 %token <constant>		TRUE_C FALSE_C
 
 %type <identifier> label
-%type <bytecode> dot_bytecode
+%type <bytecode> dot_bytecode compiler_ref
 %type <constant> constant constant_list constant_list_opt
 %type <statement> statement
 %type <statement_list> statement_list
 %%
+/*************** Frame ***************/
 translation_unit
 	: /* NULL */
-	| next_line_list_opt statement_list
+	| translation_unit top_level_unit translation_unit
+	;
+top_level_unit
+	: next_line_list_opt statement_list next_line_list_opt
 	{
 		Asm_Compiler *current_compiler;
 		current_compiler = Asm_get_current_compiler();
-		current_compiler->list = $2;
+		if (current_compiler->top_level) {
+			Asm_cat_statement_list(current_compiler->top_level,
+								   $2);
+		} else {
+			current_compiler->top_level = $2;
+		}
 	}
 	;
+
+/*************** Detail Syntax ***************/
 dot_bytecode
 	: IDENTIFIER
 	{
@@ -44,6 +55,13 @@ dot_bytecode
 	| dot_bytecode DOT IDENTIFIER
 	{
 		$$ = Asm_chain_bytecode($1, $3);
+	}
+	;
+compiler_ref
+	: DOT IDENTIFIER
+	{
+		$$ = Asm_chain_bytecode(Asm_create_bytecode(NULL),
+								$2);
 	}
 	;
 constant
@@ -89,21 +107,25 @@ label
 	}
 	;
 statement
-	: label dot_bytecode constant_list_opt
+	: label
 	{
-		$$ = Asm_create_statement($1, $2, $3);
+		$$ = Asm_create_statement($1, NULL, NULL);
 	}
-	| dot_bytecode constant_list_opt
+	| dot_bytecode constant_list_opt NEXT_LINE
 	{
+		$$ = Asm_create_statement(NULL, $1, $2);
+	}
+	| compiler_ref constant_list_opt NEXT_LINE
+	{	
 		$$ = Asm_create_statement(NULL, $1, $2);
 	}
 	;
 statement_list
-	: statement next_line_list
+	: statement next_line_list_opt
 	{
 		$$ = Asm_create_statement_list($1);
 	}
-	| statement next_line_list statement_list
+	| statement next_line_list_opt statement_list
 	{
 		$$ = Asm_chain_statement_list($1, $3);
 	}

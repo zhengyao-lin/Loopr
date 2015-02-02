@@ -39,6 +39,12 @@ typedef enum {
 } LooprCodeGroup;
 
 typedef enum {
+	LCR_ENTRANCE = 1,
+	LCR_MAX_STACK,
+	LCR_CODE_PLUS_1
+} LooprCodeCompilerReference;
+
+typedef enum {
     LPR_False = 0,
     LPR_True = 1
 } Loopr_Boolean;
@@ -136,6 +142,9 @@ typedef struct Loopr_Stack_tag {
 typedef struct ByteContainer_tag {
 	Loopr_Int32 next;
 	Loopr_Int32 alloc_size;
+
+	Loopr_Boolean hinted:1;
 	Loopr_Int32 stack_size;
+	Loopr_Int32 entrance;
 	Loopr_Byte *code;
 } ByteContainer;

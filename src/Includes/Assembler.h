@@ -26,6 +26,7 @@ typedef enum {
 	CONST_DOUBLE,
 
 	CONST_STRING,
+	CONST_LABEL,
 
 	CONST_TYPE_PLUS_1
 } ConstantType;
@@ -106,8 +107,8 @@ Asm_Compiler *Asm_compile_file(FILE *fp);
 int get_current_line_number();
 Constant *Asm_alloc_constant(ConstantType type);
 Constant *Asm_chain_constant(Constant *list, Constant *add);
-Bytecode *Asm_create_bytecode(char *identifier);
-Bytecode *Asm_chain_bytecode(Bytecode *list, char *identifier);
+Bytecode *Asm_create_bytecode(char *identifier, Loopr_Byte code, Loopr_Boolean has_fixed);
+Bytecode *Asm_chain_bytecode(Bytecode *list, char *identifier, Loopr_Byte code, Loopr_Boolean has_fixed);
 Statement *Asm_create_statement(char *label, Bytecode *code, Constant *const_opt);
 StatementList *Asm_create_statement_list(Statement *st);
 StatementList *Asm_cat_statement_list(StatementList *list, StatementList *addin);

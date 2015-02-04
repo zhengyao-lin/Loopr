@@ -36,12 +36,15 @@ Asm_chain_constant(Constant *list, Constant *add)
 }
 
 Bytecode *
-Asm_create_bytecode(char *identifier)
+Asm_create_bytecode(char *identifier, Loopr_Byte code, Loopr_Boolean has_fixed)
 {
 	Bytecode *ret;
 
 	ret = ASM_malloc(sizeof(Bytecode));
+
 	ret->name = identifier;
+	ret->has_fixed = has_fixed;
+	ret->code = code;
 	ret->next = NULL;
 	ret->line_number = get_current_line_number();
 
@@ -49,13 +52,13 @@ Asm_create_bytecode(char *identifier)
 }
 
 Bytecode *
-Asm_chain_bytecode(Bytecode *list, char *identifier)
+Asm_chain_bytecode(Bytecode *list, char *identifier, Loopr_Byte code, Loopr_Boolean has_fixed)
 {
 	Bytecode *pos;
 
 	for (pos = list; pos->next; pos = pos->next)
 		;
-	pos->next = Asm_create_bytecode(identifier);
+	pos->next = Asm_create_bytecode(identifier, code, has_fixed);
 
 	return list;
 }

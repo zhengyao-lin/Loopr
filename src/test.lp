@@ -38,7 +38,7 @@ ldb.f8 3.141592654
 stloc "float1"
 
 loop0:
-jmp "loop1";
+jmp loop1;
 
 ldloc "float1"
 bx
@@ -48,8 +48,8 @@ popf
 //jmp 40;
 loop1:
 
-ldb.i32 2000
-ldb.i32 5
+ldb.8 2000
+ldb.8 5
 ldb.i32 500
 ldb.i32 200
 ldb.i32 100
@@ -64,4 +64,3 @@ ldb.i32 #-12
 popb
 
 loop2:
-exit

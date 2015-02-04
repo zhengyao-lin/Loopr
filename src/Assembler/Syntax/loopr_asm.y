@@ -50,18 +50,31 @@ top_level_unit
 dot_bytecode
 	: IDENTIFIER
 	{
-		$$ = Asm_create_bytecode($1);
+		$$ = Asm_create_bytecode($1, 0, LPR_False);
+	}
+	| DIGIT_LITERAL
+	{
+		$$ = Asm_create_bytecode(NULL, $1->u.byte_value, LPR_True);
 	}
 	| dot_bytecode DOT IDENTIFIER
 	{
-		$$ = Asm_chain_bytecode($1, $3);
+		$$ = Asm_chain_bytecode($1, $3, 0, LPR_False);
+	}
+	| dot_bytecode DOT DIGIT_LITERAL
+	{
+		$$ = Asm_chain_bytecode($1, NULL, $3->u.byte_value, LPR_True);
 	}
 	;
 compiler_ref
 	: DOT IDENTIFIER
 	{
-		$$ = Asm_chain_bytecode(Asm_create_bytecode(NULL),
-								$2);
+		$$ = Asm_chain_bytecode(Asm_create_bytecode(NULL, 0, LPR_False),
+								$2, 0, LPR_False);
+	}
+	| DOT DIGIT_LITERAL
+	{
+		$$ = Asm_chain_bytecode(Asm_create_bytecode(NULL, 0, LPR_False),
+								NULL, $2->u.byte_value, LPR_True);
 	}
 	;
 constant
@@ -73,7 +86,7 @@ constant
 	| FALSE_C
 	| IDENTIFIER
 	{
-		Constant *constant = Asm_alloc_constant(CONST_STRING);
+		Constant *constant = Asm_alloc_constant(CONST_LABEL);
 		constant->u.string_value = $1;
 		$$ = constant;
 	}

@@ -1,4 +1,6 @@
 
+SP				[ \t\v\f]
+NEWLINE			[\r\n]
 PM				[+-]
 DIGIT			[0-9]
 HEX				[a-fA-F0-9]
@@ -86,13 +88,13 @@ Loopr_Boolean st_character_literal_state;
 	return DIGIT_LITERAL;
 }
 
-<INITIAL>[0-9]+\.[0-9]+{FSUFFIX}? {
+<INITIAL>{DIGIT}+\.{DIGIT}+{FSUFFIX}? {
 	get_float_const();
 	return FLOAT_LITERAL;
 }
 
  /* Invisible Tokens */
-<INITIAL>[ \t\v\f]		;
+<INITIAL>{SP}		;
 <INITIAL>[\r\n] {
 	increment_line_number();
 	return NEXT_LINE;
@@ -103,7 +105,7 @@ Loopr_Boolean st_character_literal_state;
 <INITIAL>"//"     	BEGIN CC_COMMENT;
 <INITIAL>";"     	BEGIN CC_COMMENT;
 
-<C_COMMENT>[\r\n] {
+<C_COMMENT>{NEWLINE} {
 	increment_line_number();
 	return NEXT_LINE;
 }
@@ -111,7 +113,7 @@ Loopr_Boolean st_character_literal_state;
 <C_COMMENT><<EOF>>	DBG_panic(("EOF in comment\n"));
 <C_COMMENT>.		;
 
-<CC_COMMENT>[\r\n] {
+<CC_COMMENT>{NEWLINE} {
 	increment_line_number();
 	BEGIN INITIAL;
 	return NEXT_LINE;
@@ -153,18 +155,18 @@ Loopr_Boolean st_character_literal_state;
         Asm_add_string_literal('\'');
     }
 }
-<STRING_LITERAL_STATE>\\[0-7]{1,3} {
+<STRING_LITERAL_STATE>\\{OCT}{1,3} {
 	int letter;
 	sscanf(&yytext[1], "%o", &letter);
     Asm_add_string_literal(letter);
 }
-<STRING_LITERAL_STATE>\\[xX][0-9a-fA-F]{1,2} {
+<STRING_LITERAL_STATE>\\[xX]{HEX}{1,2} {
 	int letter;
 	sscanf(&yytext[2], "%x", &letter);
     Asm_add_string_literal(letter);
 }
-<STRING_LITERAL_STATE>\n        {
-    Asm_add_string_literal('\n');
+<STRING_LITERAL_STATE>NEWLINE        {
+    Asm_add_string_literal(yytext[0]);
     increment_line_number();
 }
 <STRING_LITERAL_STATE>\\\"      Asm_add_string_literal('"');

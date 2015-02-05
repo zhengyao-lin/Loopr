@@ -52,11 +52,6 @@ typedef struct TypeInfo_tag {
 	Loopr_Int32 size;		
 } TypeInfo;
 
-typedef struct LocalVariable_tag {
-	char *identifier;
-	Loopr_Value *value;
-} LocalVariable;
-
 typedef struct ExeEnvironment_tag {
 	WarningFlag wflag;
 
@@ -89,6 +84,8 @@ Loopr_Value *Loopr_get_init_value(Loopr_BasicType type);
 /* coding.c */
 Loopr_Byte *Coding_alloc_byte(int length);
 ByteContainer *Coding_init_coding_env(void);
+int Coding_init_local_variable(ByteContainer *env, char *identifier);
+int Coding_get_local_variable_index(ByteContainer *env, char *name);
 void Coding_byte_cat(ByteContainer *env, Loopr_Byte *src, int count);
 void Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args_count);
 ExeEnvironment *Coding_init_exe_env(ByteContainer *env, WarningFlag wflag);

@@ -54,7 +54,46 @@ Coding_init_coding_env(void)
 	env->entrance = 0;
 	env->code = NULL;
 
+	env->local_variable_count = 0;
+	env->local_variable = NULL;
+
 	return env;
+}
+
+int
+Coding_init_local_variable(ByteContainer *env, char *identifier)
+{
+	int i;
+	for (i = 0; i < env->local_variable_count; i++) {
+		if (!strcmp(env->local_variable[i].identifier,
+					identifier)) {
+			DBG_panic(("Duplicated variable name \"%s\"\n", identifier));
+			return -1;
+		}
+	}
+
+	env->local_variable = MEM_realloc(env->local_variable,
+									  sizeof(LocalVariable) * (env->local_variable_count + 1));
+	env->local_variable[env->local_variable_count].value = NULL;
+	env->local_variable[env->local_variable_count].identifier = MEM_strdup(identifier);
+	env->local_variable_count++;
+
+	return i;
+}
+
+int
+Coding_get_local_variable_index(ByteContainer *env, char *name)
+{
+	int i;
+	for (i = 0; i < env->local_variable_count; i++) {
+		if (!strcmp(env->local_variable[i].identifier,
+					name)) {
+			return i;
+		}
+	}
+	DBG_panic(("Cannot find local variable \"%s\"\n", name));
+
+	return -1;
 }
 
 void
@@ -109,8 +148,8 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->stack.alloc_size = env->stack_size + 1;
 	ret->stack.stack_pointer = -1;
 	ret->stack.value = stack_value;
-	ret->local_variable_count = 0;
-	ret->local_variable = NULL;
+	ret->local_variable_count = env->local_variable_count;
+	ret->local_variable = env->local_variable;
 
 	ret->outer_env = NULL;
 

@@ -115,25 +115,15 @@ Private_do_push_byte(Loopr_BasicType basic_type, Loopr_Byte *code, int *offset)
 }
 
 void
-Private_init_local_variable(ExeEnvironment *env, Loopr_BasicType type, char *identifier)
+Private_init_local_variable(ExeEnvironment *env, Loopr_BasicType type, int index)
 {
-	int i;
-	for (i = 0; i < env->local_variable_count; i++) {
-		if (!strcmp(env->local_variable[i].identifier,
-					identifier)) {
-			if (env->wflag > LPR_JUST_PANIC) {
-				DBG_panic(("Duplicated variable name \"%s\"\n", identifier));
-			}
-			return;
-		}
+	if ((index < 0 || index >= env->local_variable_count)
+		&& env->wflag != LPR_NOTHING) {
+		DBG_panic(("init: Cannot find local variable\n"));
+		return;
 	}
 
-	env->local_variable = MEM_realloc(env->local_variable,
-									  sizeof(LocalVariable) * (env->local_variable_count + 1));
-	env->local_variable[env->local_variable_count].value = Loopr_get_init_value(type);
-	env->local_variable[env->local_variable_count].identifier = MEM_strdup(identifier);
-	env->local_variable_count++;
-
+	env->local_variable[index].value = Loopr_get_init_value(type);
 	return;
 }
 
@@ -165,38 +155,28 @@ Private_copy_variable(Loopr_Value *src)
 }
 
 void
-Private_assign_local_variable(ExeEnvironment *env, char *name, Loopr_Value *value)
+Private_assign_local_variable(ExeEnvironment *env, int index, Loopr_Value *value)
 {
-	int i;
-	for (i = 0; i < env->local_variable_count; i++) {
-		if (!strcmp(env->local_variable[i].identifier,
-					name)) {
-			env->local_variable[i].value = Private_copy_variable(value);
-			return;
-		}
+	if ((index < 0 || index >= env->local_variable_count)
+		&& env->wflag != LPR_NOTHING) {
+		DBG_panic(("stloc: Cannot find local variable\n"));
+		return;
 	}
-	if (env->wflag != LPR_NOTHING) {
-		DBG_panic(("Cannot find local variable \"%s\"\n", name));
-	}
+	env->local_variable[index].value = Private_copy_variable(value);
 
 	return;
 }
 
 Loopr_Value *
-Private_load_local_variable(ExeEnvironment *env, char *name)
+Private_load_local_variable(ExeEnvironment *env, int index)
 {
-	int i;
-	for (i = 0; i < env->local_variable_count; i++) {
-		if (!strcmp(env->local_variable[i].identifier,
-					name)) {
-			return Private_copy_variable(env->local_variable[i].value);
-		}
-	}
-	if (env->wflag != LPR_NOTHING) {
-		DBG_panic(("Cannot find local variable \"%s\"\n", name));
+	if ((index < 0 || index >= env->local_variable_count)
+		&& env->wflag != LPR_NOTHING) {
+		DBG_panic(("ldloc: Cannot find local variable\n"));	
+		return NULL;
 	}
 
-	return;
+	return Private_copy_variable(env->local_variable[index].value);
 }
 
 void
@@ -301,17 +281,22 @@ Loopr_execute(ExeEnvironment *env)
 				break;				
 			}
 			case LPR_LD_LOC: {
-				char *name = &env->code[pc + 1];
-				ST(env->stack, 1) = Private_load_local_variable(env, name);
+				int index;
+				Loopr_byte_deserialize(&index,
+						  			   &env->code[pc + 1], sizeof(Loopr_Int32));
+				ST(env->stack, 1) = Private_load_local_variable(env, index);
 				env->stack.stack_pointer++;
-				pc += 2 + strlen(name);
+				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
 			case LPR_INIT_LOC: {
+				int index;
 				Loopr_BasicType type = env->code[pc + 1];
-				char *identifier = &env->code[pc + 2];
-				Private_init_local_variable(env, type, identifier);
-				pc += 3 + strlen(identifier);
+				Loopr_byte_deserialize(&index,
+						  			   &env->code[pc + 2], sizeof(Loopr_Int32));
+
+				Private_init_local_variable(env, type, index);
+				pc += 2 + sizeof(Loopr_Int32);
 				break;
 			}
 			case LPR_BOXING: {
@@ -354,10 +339,12 @@ Loopr_execute(ExeEnvironment *env)
 				break;
 			}
 			case LPR_STORE_LOC: {
-				char *name = &env->code[pc + 1];
-				Private_assign_local_variable(env, name, ST(env->stack, 0));
+				int index;
+				Loopr_byte_deserialize(&index,
+						  			   &env->code[pc + 1], sizeof(Loopr_Int32));
+				Private_assign_local_variable(env, index, ST(env->stack, 0));
 				env->stack.stack_pointer--;
-				pc += 2 + strlen(name);
+				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
 			case LPR_ADD_BYTE: {

@@ -139,12 +139,22 @@ typedef struct Loopr_Stack_tag {
 	Loopr_Value **value;
 } Loopr_Stack;
 
+typedef struct LocalVariable_tag {
+	char *identifier;
+	Loopr_InfoTable *table;
+	Loopr_Value *value;
+} LocalVariable;
+
 typedef struct ByteContainer_tag {
 	Loopr_Int32 next;
 	Loopr_Int32 alloc_size;
 
 	Loopr_Boolean hinted:1;
 	Loopr_Int32 stack_size;
+
 	Loopr_Int32 entrance;
 	Loopr_Byte *code;
+
+	Loopr_Int32 local_variable_count;
+	LocalVariable *local_variable;
 } ByteContainer;

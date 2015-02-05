@@ -82,6 +82,7 @@ Gencode_search_type(char *name)
 void
 Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 {
+	Constant *pos;
 	Loopr_BasicType type;
 
 	Coding_push_code(env, LPR_LD_BYTE, NULL, 0);
@@ -190,6 +191,7 @@ Gencode_push_type_args(ByteContainer *env, Bytecode *code)
 void
 Gencode_statement(ByteContainer *env, Statement *list)
 {
+	int index;
 	Loopr_Byte code;
 
 	if (list->label) {
@@ -234,6 +236,18 @@ Gencode_statement(ByteContainer *env, Statement *list)
 	switch (code) {
 		case LPR_LD_BYTE:
 			Gencode_fix_load_byte(env, list);
+			break;
+		case LPR_INIT_LOC:
+			Coding_init_local_variable(env, list->constant->u.string_value);
+		case LPR_LD_LOC:
+		case LPR_STORE_LOC:
+			index = Coding_get_local_variable_index(env, list->constant->u.string_value);
+			Coding_push_code(env, code, NULL, 0);
+			Gencode_push_type_args(env, list->bytecode->next);
+			Coding_push_code(env, LPR_NULL_CODE,
+							 &index,
+							 sizeof(Loopr_Int32));
+			MEM_free(list->constant->u.string_value);
 			break;
 		case LPR_NULL_CODE:
 			DBG_panic(("line %d: \"dummy\" is not any useful code\n", list->line_number));

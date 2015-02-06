@@ -95,7 +95,7 @@ Loopr_Boolean st_character_literal_state;
 
  /* Invisible Tokens */
 <INITIAL>{SP}		;
-<INITIAL>[\r\n] {
+<INITIAL>{NEWLINE} {
 	increment_line_number();
 	return NEXT_LINE;
 }
@@ -165,7 +165,7 @@ Loopr_Boolean st_character_literal_state;
 	sscanf(&yytext[2], "%x", &letter);
     Asm_add_string_literal(letter);
 }
-<STRING_LITERAL_STATE>NEWLINE        {
+<STRING_LITERAL_STATE>{NEWLINE}        {
     Asm_add_string_literal(yytext[0]);
     increment_line_number();
 }

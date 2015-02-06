@@ -287,6 +287,7 @@ Gencode_compile(Asm_Compiler *compiler)
 
 	container = Coding_init_coding_env();
 	Gencode_statement_list(container, compiler->top_level);
+	Asm_clean_local_env(container);
 
 	return container;
 }

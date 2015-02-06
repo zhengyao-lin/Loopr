@@ -117,10 +117,14 @@ Private_do_push_byte(Loopr_BasicType basic_type, Loopr_Byte *code, int *offset)
 void
 Private_init_local_variable(ExeEnvironment *env, Loopr_BasicType type, int index)
 {
-	if ((index < 0 || index >= env->local_variable_count)
-		&& env->wflag != LPR_NOTHING) {
+	if (index < 0 && env->wflag != LPR_NOTHING) {
 		DBG_panic(("init: Cannot find local variable\n"));
 		return;
+	} else if (index >= env->local_variable_count) {
+		env->local_variable = MEM_realloc(env->local_variable,
+									  	  sizeof(LocalVariable) * (env->local_variable_count + 1));
+		env->local_variable[index].identifier = NULL;
+		env->local_variable_count++;
 	}
 
 	env->local_variable[index].value = Loopr_get_init_value(type);

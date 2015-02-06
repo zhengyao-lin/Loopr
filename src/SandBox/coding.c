@@ -148,8 +148,8 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->stack.alloc_size = env->stack_size + 1;
 	ret->stack.stack_pointer = -1;
 	ret->stack.value = stack_value;
-	ret->local_variable_count = env->local_variable_count;
-	ret->local_variable = env->local_variable;
+	ret->local_variable_count = 0;
+	ret->local_variable = NULL;
 
 	ret->outer_env = NULL;
 

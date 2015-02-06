@@ -6,13 +6,14 @@ OBJS = \
 	Debug/dbg.o \
 	Utils/utl.o \
 	Assembler/Assembler.o \
+	Interfaces/Interfaces.o \
 	main.o
 INCLUDES = \
 	-IIncludes \
 	-ISandBox
 
 $(TARGET):$(OBJS)
-	$(CC) $(OBJS) -o $@ -lm #-lefence -lpthread
+	$(CC) $(OBJS) -o $@ -lm
 
 .c.o:
 	$(CC) $(CFLAGS) $*.c $(INCLUDES)
@@ -23,7 +24,8 @@ clean:
 	cd Debug; $(MAKE) clean;
 	cd Utils; $(MAKE) clean;
 	cd Assembler; $(MAKE) clean;
-	-rm -f *.o $(TARGET) *~
+	cd Interfaces; $(MAKE) clean;
+	-rm -f *.o *.lexe $(TARGET) *~
 
 Memory/mem.o:
 	cd Memory; $(MAKE);
@@ -35,5 +37,7 @@ Utils/utl.o:
 	cd Utils; $(MAKE);
 Assembler/Assembler.o:
 	cd Assembler; $(MAKE);
+Interfaces/Interfaces.o:
+	cd Interfaces; $(MAKE);
 
 main.o: main.c SandBox/SandBox_pri.h Includes/MEM.h

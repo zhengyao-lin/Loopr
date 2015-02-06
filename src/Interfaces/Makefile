@@ -1,4 +1,4 @@
-TARGET = IF.o
+TARGET = Interfaces.o
 CFLAGS = -c -g -Wall -DDEBUG
 OBJS = executable.o
 INCLUDES = \

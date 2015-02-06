@@ -13,6 +13,8 @@ ByteContainer *Gencode_compile(Asm_Compiler *compiler);
 int main(int argc, char **argv)
 {
 	FILE *fp = NULL;
+	FILE *fp2 = NULL;
+	ByteContainer *container;
 	setlocale(LC_ALL, "");
 #if 1
 
@@ -25,7 +27,15 @@ int main(int argc, char **argv)
 		fp = stdin;
 	}
 
-	ByteContainer *container = Gencode_compile(Asm_compile_file(fp));
+	container = Gencode_compile(Asm_compile_file(fp));
+
+	fp2 = fopen("./test.lexe", "w+b");
+	ISerialize_save_byte_container(fp2, container);
+	rewind(fp2);
+	MEM_free(container->code);
+	MEM_free(container);
+	container = ISerialize_read_byte_container(fp2);
+
 	ExeEnvironment *env = Coding_init_exe_env(container, LPR_ANYTHING);
 
 	Loopr_execute(env);

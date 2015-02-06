@@ -102,6 +102,7 @@ void Asm_set_current_compiler(Asm_Compiler *compiler);
 Asm_Compiler *Asm_get_current_compiler();
 Asm_Compiler *Asm_init_compiler();
 Asm_Compiler *Asm_compile_file(FILE *fp);
+void Asm_clean_local_env(ByteContainer *env);
 
 /* create.c */
 int get_current_line_number();

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "LBS.h"
 #include "Assembler.h"
+#include "MEM.h"
 
 Asm_Compiler *__current_compiler;
 
@@ -50,4 +51,21 @@ Asm_compile_file(FILE *fp)
 	Asm_reset_string_literal_buffer();
 
 	return compiler;
+}
+
+void
+Asm_clean_local_env(ByteContainer *env)
+{
+	int i;
+
+	for (i = 0; i < env->local_variable_count; i++) {
+		if (env->local_variable[i].identifier) {
+			MEM_free(env->local_variable[i].identifier);
+		}
+	}
+	if (env->local_variable) {
+		MEM_free(env->local_variable);
+	}
+
+	return;
 }

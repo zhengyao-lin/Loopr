@@ -185,8 +185,12 @@ Walle_dispose_environment(ExeEnvironment *env)
 	MEM_free(env->code);
 	MEM_free(env->stack.value);
 	for (i = 0; i < env->local_variable_count; i++) {
-		MEM_free(env->local_variable[i].identifier);
+		if (env->local_variable[i].identifier) {
+			MEM_free(env->local_variable[i].identifier);
+		}
 	}
-	MEM_free(env->local_variable);
+	if (env->local_variable) {
+		MEM_free(env->local_variable);
+	}
 	MEM_free(env);
 }

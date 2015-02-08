@@ -26,7 +26,7 @@ Asm_init_compiler()
 
 	ret = ASM_malloc(sizeof(Asm_Compiler));
 	ret->top_level = NULL;
-	ret->current_line_number = 1;
+	ret->current_line_number = 0;
 
 	return ret;
 }
@@ -44,7 +44,7 @@ Asm_compile_file(FILE *fp)
 
 	yyin = fp;
 	if (yyparse()) {
-		fprintf(stderr, "UNEXPECTED ERROR!\n");
+		fprintf(stderr, "Unexpected error!\n");
 		exit(0);
 	}
 
@@ -67,5 +67,20 @@ Asm_clean_local_env(ByteContainer *env)
 		MEM_free(env->local_variable);
 	}
 
+	return;
+}
+
+void
+Asm_dispose_compiler(Asm_Compiler *compiler)
+{
+	MEM_free(compiler->function_definition);
+	ASM_free(compiler);
+	return;
+}
+
+void
+Asm_dispose_current_compiler()
+{
+	Asm_dispose_compiler(Asm_get_current_compiler());
 	return;
 }

@@ -40,18 +40,6 @@ typedef enum {
 	LPR_ANYTHING
 } WarningFlag;
 
-typedef struct ByteInfo_tag {
-	char *assembly_name;
-	Loopr_Int32 need_stack;
-	Loopr_Int32 stack_regulator;		
-} ByteInfo;
-
-typedef struct TypeInfo_tag {
-	char *short_name;
-	char *assembly_name;
-	Loopr_Int32 size;		
-} TypeInfo;
-
 typedef struct ExeEnvironment_tag {
 	WarningFlag wflag;
 
@@ -64,10 +52,13 @@ typedef struct ExeEnvironment_tag {
 	LocalVariable *local_variable;
 
 	struct ExeEnvironment_tag *outer_env;
+
+	Loopr_Int32 function_count;
+	struct ExeEnvironment_tag **function;
 } ExeEnvironment;
 
 /* execute.c */
-void Loopr_execute(ExeEnvironment *env);
+Loopr_Value *Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level);
 
 /* value.c */
 Loopr_Byte *Loopr_byte_serialize(const void *data, int length);

@@ -55,6 +55,7 @@ dot_bytecode
 	| DIGIT_LITERAL
 	{
 		$$ = Asm_create_bytecode(NULL, $1->u.byte_value, LPR_True);
+		ASM_free($1);
 	}
 	| dot_bytecode DOT IDENTIFIER
 	{
@@ -63,6 +64,7 @@ dot_bytecode
 	| dot_bytecode DOT DIGIT_LITERAL
 	{
 		$$ = Asm_chain_bytecode($1, NULL, $3->u.byte_value, LPR_True);
+		ASM_free($3);
 	}
 	;
 compiler_ref
@@ -75,6 +77,7 @@ compiler_ref
 	{
 		$$ = Asm_chain_bytecode(Asm_create_bytecode(NULL, 0, LPR_False),
 								NULL, $2->u.byte_value, LPR_True);
+		ASM_free($2);
 	}
 	;
 constant
@@ -90,12 +93,20 @@ constant
 		constant->u.string_value = $1;
 		$$ = constant;
 	}
+	| LB next_line_list_opt statement_list next_line_list_opt RB
+	{
+		$$ = Asm_create_block($3);
+	}
 	;
 constant_list
 	: constant
 	| constant_list COMMA constant
 	{
 		$$ = Asm_chain_constant($1, $3);
+	}
+	| constant_list constant
+	{
+		$$ = Asm_chain_constant($1, $2);
 	}
 	;
 constant_list_opt

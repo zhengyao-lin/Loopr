@@ -5,12 +5,21 @@
 #include "SandBox_pri.h"
 #include "Assembler.h"
 
+static LabelContainer *backup = NULL;
 static LabelContainer *header = NULL;
+static ByteContainer *env_backup = NULL;
 static ByteContainer *current_env = NULL;
 
 void
 Label_init(ByteContainer *env)
 {
+	if (header) {
+		backup = header;
+	}
+	if (current_env) {
+		env_backup = current_env;
+	}
+	header = NULL;
 	current_env = env;
 	return;
 }
@@ -91,17 +100,18 @@ Label_set_all()
 	LabelContainer *pos;
 	LabelContainer *last = NULL;
 
-	for (pos = header; pos; pos = pos->next) {
-		if (last) {
-			ASM_free(last);
-		}
+	for (pos = header; pos; last = pos, pos = pos->next, ASM_free(last)) {
 		for (i = 0; i < pos->ref_count; i++) {
-			memcpy(&current_env->code[pos->ref[i]],
-				   &pos->dest, sizeof(Loopr_Int32));
+			if (pos->dest > 0) {
+				memcpy(&current_env->code[pos->ref[i]],
+					   &pos->dest, sizeof(Loopr_Int32));
+			} else {
+				DBG_panic(("Cannot find label by name \"%s\"\n", pos->identifier));
+			}
 		}
 		MEM_free(pos->identifier);
 		ASM_free(pos->ref);
-		last = pos;
 	}
-	header = NULL;
+	header = (backup ? backup : NULL);
+	current_env = (env_backup ? env_backup : NULL);
 }

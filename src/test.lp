@@ -1,7 +1,7 @@
 .maxstack 5
 .entry
 
-initloc.f8 "float1"
+initloc.f8 float1
 initloc.f16 "double1"
 initloc.null "integer1"
 initloc.obj "object1"
@@ -38,14 +38,14 @@ ldb.f8 3.141592654
 stloc "float1"
 
 loop0:
-jmp loop1;
+goto loop1;
 
 ldloc "float1"
 bx
 unbx
 popf
 
-//jmp 40;
+//goto 40;
 loop1:
 
 ldb.8 2000
@@ -60,7 +60,9 @@ mulb
 divb
 popb
 
-ldb.i32 #-12
+ldb #-12
 popb
 
 loop2:
+loop3:
+loop4:

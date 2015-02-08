@@ -29,8 +29,11 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"mulb",	2,	-1},
 	{"divb",	2,	-1},
 
-	{"jmp",		0,	0},
-	{"exit",	0,	0},
+	{"call",	0,	1},
+	{"ldarg",	0,	1},
+
+	{"goto",	0,	0},
+	{"ret",		0,	0},
 };
 
 Loopr_Byte *
@@ -47,6 +50,7 @@ Coding_init_coding_env(void)
 	ByteContainer *env;
 
 	env = MEM_malloc(sizeof(ByteContainer));
+	env->name = NULL;
 	env->next = 0;
 	env->alloc_size = 0;
 	env->hinted = LPR_False;
@@ -57,6 +61,11 @@ Coding_init_coding_env(void)
 	env->local_variable_count = 0;
 	env->local_variable = NULL;
 
+	env->function_count = 0;
+	env->function = NULL;
+
+	env->outer_env = NULL;
+
 	return env;
 }
 
@@ -65,8 +74,9 @@ Coding_init_local_variable(ByteContainer *env, char *identifier)
 {
 	int i;
 	for (i = 0; i < env->local_variable_count; i++) {
-		if (!strcmp(env->local_variable[i].identifier,
-					identifier)) {
+		if (env->local_variable[i].identifier
+			&& !strcmp(env->local_variable[i].identifier,
+					   identifier)) {
 			DBG_panic(("Duplicated variable name \"%s\"\n", identifier));
 			return -1;
 		}
@@ -75,7 +85,7 @@ Coding_init_local_variable(ByteContainer *env, char *identifier)
 	env->local_variable = MEM_realloc(env->local_variable,
 									  sizeof(LocalVariable) * (env->local_variable_count + 1));
 	env->local_variable[env->local_variable_count].value = NULL;
-	env->local_variable[env->local_variable_count].identifier = MEM_strdup(identifier);
+	env->local_variable[env->local_variable_count].identifier = identifier ? MEM_strdup(identifier) : NULL;
 	env->local_variable_count++;
 
 	return i;
@@ -132,6 +142,7 @@ Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args
 ExeEnvironment *
 Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 {
+	int i;
 	ExeEnvironment *ret;
 	Loopr_Value **stack_value;
 
@@ -152,6 +163,17 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->local_variable = NULL;
 
 	ret->outer_env = NULL;
+
+	ret->function_count = env->function_count;
+	ret->function = NULL;
+	if (env->function_count > 0) {
+		ret->function = MEM_malloc(sizeof(ExeEnvironment *) * ret->function_count);
+
+		for (i = 0; i < env->function_count; i++) {
+			ret->function[i] = Coding_init_exe_env(env->function[i], wflag);
+			ret->function[i]->outer_env = ret;
+		}
+	}
 
 	return ret;
 }

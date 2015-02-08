@@ -77,7 +77,7 @@
 #define is_unsigned(type) \
 	(type % 2 != 0 ? LPR_True : LPR_False)
 
-Loopr_Char *
+static Loopr_Char *
 chain_string(Loopr_Value *str1, Loopr_Value *str2)
 {
 	int len;
@@ -101,20 +101,22 @@ chain_string(Loopr_Value *str1, Loopr_Value *str2)
 	return ret;
 }
 
-Loopr_Value *
+static Loopr_Value *ret_value;
+
+static Loopr_Value *
 Private_do_push_byte(Loopr_BasicType basic_type, Loopr_Byte *code, int *offset)
 {
-	Loopr_Value *ret;
+	Loopr_Value *ret_value;
 
-	ret = Loopr_alloc_value(basic_type);
-	Loopr_byte_deserialize(&ret->u.int64_value,
+	ret_value = Loopr_alloc_value(basic_type);
+	Loopr_byte_deserialize(&ret_value->u.int64_value,
 						  code, Loopr_Type_Info[basic_type].size);
 	*offset = Loopr_Type_Info[basic_type].size;
 
-	return ret;
+	return ret_value;
 }
 
-void
+static void
 Private_init_local_variable(ExeEnvironment *env, Loopr_BasicType type, int index)
 {
 	if (index < 0 && env->wflag != LPR_NOTHING) {
@@ -131,34 +133,32 @@ Private_init_local_variable(ExeEnvironment *env, Loopr_BasicType type, int index
 	return;
 }
 
-Loopr_Value *
+static Loopr_Value *
 Private_copy_variable(Loopr_Value *src)
 {
-	Loopr_Value *ret;
-
 	if (src) {
-		ret = Loopr_alloc_value(src->table->type);
+		ret_value = Loopr_alloc_value(src->table->type);
 		switch (src->table->type) {
 			case LPR_STRING:
 				if (src->u.string_value) {
-					ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (Loopr_wcslen(src->u.string_value) + 1));
-					Loopr_wcscpy(ret->u.string_value, src->u.string_value);
+					ret_value->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (Loopr_wcslen(src->u.string_value) + 1));
+					Loopr_wcscpy(ret_value->u.string_value, src->u.string_value);
 				} else {
-					ret->u.string_value = NULL;
+					ret_value->u.string_value = NULL;
 				}
 				break;
 			default:
-				ret->u = src->u;
+				ret_value->u = src->u;
 				break;
 		}
 	} else {
-		ret = NULL;
+		ret_value = NULL;
 	}
 
-	return ret;
+	return ret_value;
 }
 
-void
+static void
 Private_assign_local_variable(ExeEnvironment *env, int index, Loopr_Value *value)
 {
 	if ((index < 0 || index >= env->local_variable_count)
@@ -171,7 +171,7 @@ Private_assign_local_variable(ExeEnvironment *env, int index, Loopr_Value *value
 	return;
 }
 
-Loopr_Value *
+static Loopr_Value *
 Private_load_local_variable(ExeEnvironment *env, int index)
 {
 	if ((index < 0 || index >= env->local_variable_count)
@@ -183,7 +183,7 @@ Private_load_local_variable(ExeEnvironment *env, int index)
 	return Private_copy_variable(env->local_variable[index].value);
 }
 
-void
+static void
 Private_dispose_value(Loopr_Value **target)
 {
 	switch ((*target)->table->type) {
@@ -198,7 +198,7 @@ Private_dispose_value(Loopr_Value **target)
 	return;
 }
 
-void
+static void
 Private_expand_stack(Loopr_Stack *orig, int resize)
 {
 	orig->value = MEM_realloc(orig->value, sizeof(Loopr_Value *) * resize);
@@ -207,7 +207,7 @@ Private_expand_stack(Loopr_Stack *orig, int resize)
 	return;
 }
 
-void
+static void
 Private_mark_value(Loopr_Value *obj)
 {
 	if (!obj) {
@@ -223,7 +223,33 @@ Private_mark_value(Loopr_Value *obj)
 	return;
 }
 
-void
+static ExeEnvironment *current_top_level = NULL;
+
+static void
+Private_set_top_level(ExeEnvironment *env)
+{
+	current_top_level = env;
+	return;
+}
+
+static ExeEnvironment *
+Private_get_top_level()
+{
+	return current_top_level;
+}
+
+static void
+Private_init_function(ExeEnvironment *env)
+{
+	int i;
+
+	env->stack.stack_pointer = -1;
+	env->local_variable_count = 0;
+
+	return;
+}
+
+static void
 Private_walle_marker(ExeEnvironment *env)
 {
 	int i;
@@ -239,16 +265,64 @@ Private_walle_marker(ExeEnvironment *env)
 	return;
 }
 
-void
-Loopr_execute(ExeEnvironment *env)
+static void
+Private_walle_marker_traversal(ExeEnvironment *header)
 {
-	int prev_stack;
+	int i;
+
+	Private_walle_marker(header);
+
+	for (i = 0; i < header->function_count; i++) {
+		Private_walle_marker(header->function[i]);
+	}
+
+	return;
+}
+
+static ExeEnvironment *callee;
+static ExeEnvironment *outer;
+static int pri_i, pri_j;
+
+static Loopr_Value *
+Private_call_function(ExeEnvironment *env, int index, int argc)
+{
+	outer = Private_get_top_level();
+
+	callee = outer->function[index];
+	pri_i = -argc + 1;
+	if (argc > env->stack.stack_pointer + 1 && env->wflag != LPR_NOTHING) {
+		DBG_panic(("Too few stack for function\n"));
+	}
+
+	for (pri_j = 0; pri_i <= 0; pri_i++, pri_j++)
+	{
+		Private_init_local_variable(callee, ST_TYPE(env->stack, pri_i), pri_j);
+		Private_assign_local_variable(callee, pri_j, ST(env->stack, pri_i));
+	}
+	env->stack.stack_pointer -= argc; 
+
+	ret_value = Loopr_execute(callee, LPR_False);
+	Private_init_function(outer->function[index]);
+
+	return ret_value;
+}
+
+#define LOWER_LEVEL ("|--\t")
+
+Loopr_Value *
+Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
+{
+	int arg1;
+	int arg2;
 	int pc = env->entrance;
 
+	if (top_level) {
+		Private_set_top_level(env);
+	}
 	for (; pc < env->code_length;) {
-
-		printf("%4d:\t%-15ssp(%d)\n", pc, Loopr_Byte_Info[env->code[pc]].assembly_name, env->stack.stack_pointer);
-		prev_stack = env->stack.stack_pointer;
+		printf("%s%4d:\t%-15ssp(%d)\n", (!top_level ? LOWER_LEVEL : ""), pc,
+			   Loopr_Byte_Info[env->code[pc]].assembly_name,
+			   env->stack.stack_pointer);
 
 		if (env->stack.stack_pointer < (Loopr_Byte_Info[env->code[pc]].need_stack - 1)
 			&& env->wflag != LPR_NOTHING) {
@@ -265,10 +339,9 @@ Loopr_execute(ExeEnvironment *env)
 
 		switch (env->code[pc]) {
 			case LPR_LD_BYTE: {
-				int offset;
-				ST(env->stack, 1) = Private_do_push_byte(env->code[pc + 1], &env->code[pc + 2], &offset);
+				ST(env->stack, 1) = Private_do_push_byte(env->code[pc + 1], &env->code[pc + 2], &arg1);
 				env->stack.stack_pointer++;
-				pc += 2 + offset;
+				pc += 2 + arg1;
 				break;
 			}
 			case LPR_LD_NULL: {
@@ -278,28 +351,25 @@ Loopr_execute(ExeEnvironment *env)
 				break;	
 			}
 			case LPR_LD_STRING: {
-				int offset;
-				ST(env->stack, 1) = Loopr_create_string(&(env->code[pc + 1]), &offset);
+				ST(env->stack, 1) = Loopr_create_string(&(env->code[pc + 1]), &arg1);
 				env->stack.stack_pointer++;
-				pc += 1 + offset;
+				pc += 1 + arg1;
 				break;				
 			}
 			case LPR_LD_LOC: {
-				int index;
-				Loopr_byte_deserialize(&index,
+				Loopr_byte_deserialize(&arg1,
 						  			   &env->code[pc + 1], sizeof(Loopr_Int32));
-				ST(env->stack, 1) = Private_load_local_variable(env, index);
+				ST(env->stack, 1) = Private_load_local_variable(env, arg1);
 				env->stack.stack_pointer++;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
 			case LPR_INIT_LOC: {
-				int index;
 				Loopr_BasicType type = env->code[pc + 1];
-				Loopr_byte_deserialize(&index,
+				Loopr_byte_deserialize(&arg1,
 						  			   &env->code[pc + 2], sizeof(Loopr_Int32));
 
-				Private_init_local_variable(env, type, index);
+				Private_init_local_variable(env, type, arg1);
 				pc += 2 + sizeof(Loopr_Int32);
 				break;
 			}
@@ -316,10 +386,10 @@ Loopr_execute(ExeEnvironment *env)
 			case LPR_POP_BYTE: {
 				Loopr_BasicType type = ST_TYPE(env->stack, 0);
 				if (is_unsigned(type)) {
-					printf("#pop_%s: %lu\n", Loopr_Type_Info[type].assembly_name
+					printf("%s#pop_%s: %lu\n", (!top_level ? LOWER_LEVEL : ""), Loopr_Type_Info[type].assembly_name
 										   , GET_BIT(ST_UINT64(env->stack, 0), type));
 				} else {
-					printf("#pop_%s: %ld\n", Loopr_Type_Info[type].assembly_name
+					printf("%s#pop_%s: %ld\n", (!top_level ? LOWER_LEVEL : ""), Loopr_Type_Info[type].assembly_name
 										   , GET_BIT(ST_INT64(env->stack, 0), type));
 				}
 				env->stack.stack_pointer--;
@@ -328,25 +398,24 @@ Loopr_execute(ExeEnvironment *env)
 			}
 			case LPR_POP_FLOAT: {
 				if (ST_TYPE(env->stack, 0) == LPR_SINGLE) {
-					printf("#pop_single: %f\n", ST_SINGLE(env->stack, 0));
+					printf("%s#pop_single: %f\n", (!top_level ? LOWER_LEVEL : ""), ST_SINGLE(env->stack, 0));
 				} else {
-					printf("#pop_double: %lf\n", ST_DOUBLE(env->stack, 0));
+					printf("%s#pop_double: %lf\n", (!top_level ? LOWER_LEVEL : ""), ST_DOUBLE(env->stack, 0));
 				}
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_POP_STRING: {
-				printf("#pop_string: %ls\n", get_visual_string(ST(env->stack, 0)));
+				printf("%s#pop_string: %ls\n", (!top_level ? LOWER_LEVEL : ""), get_visual_string(ST(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_STORE_LOC: {
-				int index;
-				Loopr_byte_deserialize(&index,
+				Loopr_byte_deserialize(&arg1,
 						  			   &env->code[pc + 1], sizeof(Loopr_Int32));
-				Private_assign_local_variable(env, index, ST(env->stack, 0));
+				Private_assign_local_variable(env, arg1, ST(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
@@ -397,14 +466,34 @@ Loopr_execute(ExeEnvironment *env)
 				pc++;
 				break;
 			}
-			case LPR_JUMP: {
-				Loopr_Int32 jpc;
-				Loopr_byte_deserialize(&jpc, &env->code[pc + 1], sizeof(Loopr_Int32));
-				pc = jpc;
-				printf("#jump to: %d\n", pc);
+			case LPR_CALL: {
+				Loopr_byte_deserialize(&arg1,
+						  			   &env->code[pc + 1], sizeof(Loopr_Int32));
+				Loopr_byte_deserialize(&arg2,
+						  			   &env->code[pc + 1 + sizeof(Loopr_Int32)], sizeof(Loopr_Int32));
+				ret_value = Private_call_function(env, arg1, arg2);
+				ST(env->stack, 1) = ret_value;
+				env->stack.stack_pointer++;
+
+				pc += 1 + sizeof(Loopr_Int32) + sizeof(Loopr_Int32);
 				break;
 			}
-			case LPR_EXIT: {
+			case LPR_LOAD_ARG: {
+				if (env->code[pc + 1] < env->local_variable_count) {
+					ST(env->stack, 1) = Private_copy_variable(env->local_variable[env->code[pc + 1]].value);
+					env->stack.stack_pointer++;
+				} else {
+					DBG_panic(("Local variable with index %d is not exist\n", env->code[pc + 1]));
+				}
+				pc += 2;
+				break;
+			}
+			case LPR_GOTO: {
+				Loopr_byte_deserialize(&pc, &env->code[pc + 1], sizeof(Loopr_Int32));
+				printf("%s#goto: %d\n", (!top_level ? LOWER_LEVEL : ""), pc);
+				break;
+			}
+			case LPR_RETURN: {
 				goto EXECUTE_END;
 				break;
 			}
@@ -417,13 +506,11 @@ Loopr_execute(ExeEnvironment *env)
 			}
 		}
 		Walle_reset_mark();
-		Private_walle_marker(env);
+		Private_walle_marker_traversal(Private_get_top_level());
 		Walle_check_mem();
-		/*for (; prev_stack > env->stack.stack_pointer && prev_stack >= 0; prev_stack--) {
-			Private_dispose_value(&ST_i(env->stack, prev_stack));
-		}*/
+
 	}
 	EXECUTE_END:;
 
-	return;
+	return (env->stack.stack_pointer >= 0 ? ST(env->stack, 0) : NULL);
 }

@@ -27,9 +27,10 @@ int main(int argc, char **argv)
 
 	container = ISerialize_read_byte_container(fp);
 	fclose(fp);
+
 	ExeEnvironment *env = Coding_init_exe_env(container, LPR_ANYTHING);
 
-	Loopr_execute(env);
+	Loopr_execute(env, LPR_True);
 #endif
 
 Walle_reset_mark();

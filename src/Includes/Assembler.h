@@ -7,6 +7,8 @@
 #define NULL_VALUE (0x0)
 #define ASM_fill(obj, i) \
 	(memset(&(obj), (i), sizeof((obj))))
+#define ASM_memset(obj, i, size) \
+	(memset((obj), (i), (size)))
 
 typedef enum {
 	CONST_CHAR = 1,
@@ -28,6 +30,8 @@ typedef enum {
 	CONST_STRING,
 	CONST_LABEL,
 
+	CONST_BLOCK,
+
 	CONST_TYPE_PLUS_1
 } ConstantType;
 
@@ -48,6 +52,8 @@ typedef struct Constant_tag {
 		Loopr_UInt64		uint64_value;
 		Loopr_Single		single_value;
 		Loopr_Double		double_value;
+
+		struct Statement_tag *block;
 	} u;
 
 	int line_number;
@@ -75,8 +81,16 @@ typedef struct StatementList_tag {
 	struct StatementList_tag *next;
 } StatementList;
 
+typedef struct FunctionDefinition_tag {
+	char *name;
+} FunctionDefinition;
+
 typedef struct Asm_Compiler_tag {
 	StatementList *top_level;
+
+	int function_count;
+	FunctionDefinition *function_definition;
+
 	int current_line_number;
 } Asm_Compiler;
 
@@ -103,6 +117,8 @@ Asm_Compiler *Asm_get_current_compiler();
 Asm_Compiler *Asm_init_compiler();
 Asm_Compiler *Asm_compile_file(FILE *fp);
 void Asm_clean_local_env(ByteContainer *env);
+void Asm_dispose_compiler(Asm_Compiler *compiler);
+void Asm_dispose_current_compiler();
 
 /* create.c */
 int get_current_line_number();
@@ -114,6 +130,7 @@ Statement *Asm_create_statement(char *label, Bytecode *code, Constant *const_opt
 StatementList *Asm_create_statement_list(Statement *st);
 StatementList *Asm_cat_statement_list(StatementList *list, StatementList *addin);
 StatementList *Asm_chain_statement_list(Statement *st, StatementList *list);
+Constant *Asm_create_block(StatementList *list);
 
 /* string.c */
 void Asm_open_string_literal(void);

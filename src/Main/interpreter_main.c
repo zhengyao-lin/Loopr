@@ -28,15 +28,18 @@ int main(int argc, char **argv)
 
 	container = Gencode_compile(Asm_compile_file(fp));
 	fclose(fp);
+	yylex_destroy();
+	Asm_dispose_current_compiler();
+
 	ExeEnvironment *env = Coding_init_exe_env(container, LPR_ANYTHING);
 
-	Loopr_execute(env);
+	Loopr_execute(env, LPR_True);
 #endif
 
 Walle_reset_mark();
 Walle_gcollect();
 Walle_dispose_environment(env);
-MEM_free(container);
+Walle_dispose_byte_container(container);
 MEM_dump_blocks(stderr);
 
 	return 0;

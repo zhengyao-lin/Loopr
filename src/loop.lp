@@ -1,11 +1,10 @@
-.maxstack 3
 .entry
 
-jmp __TRIMUL_END //jump throw function
+goto __TRIMUL_END //jump throw function
 __TRIMUL: //Macro, multiply the last three stacks
 	mulb
 	mulb
-	jmp CALL_BACK
+	goto CALL_BACK
 __TRIMUL_END:
 
 //Prototype for function
@@ -16,11 +15,31 @@ ldb 16384l
 ldb 16384l
 
 //call function
-jmp __TRIMUL
+goto __TRIMUL
 CALL_BACK: //call back address
 
 //get result
 popb
 
+.function "TRIMUL",3 {
+	initloc.i32 int32
+	ldarg.0
+	ldarg.1
+	ldarg.2
+	mulb
+	mulb
+
+	ret
+}
+
+ldb 5
+ldb 6
+ldb 7
+call TRIMUL, 3;
+ldb 8
+ldb 9
+call TRIMUL, 3;
+popb
+
 //exit
-exit
+ret

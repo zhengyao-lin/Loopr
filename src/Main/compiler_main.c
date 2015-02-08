@@ -40,10 +40,12 @@ int main(int argc, char **argv)
 	ISerialize_save_byte_container(dest, container);
 	fclose(src);
 	fclose(dest);
+	yylex_destroy();
+	Asm_dispose_current_compiler();
 
 #endif
 MEM_free(container->code);
-MEM_free(container);
+Walle_dispose_byte_container(container);
 MEM_dump_blocks(stderr);
 
 	return 0;

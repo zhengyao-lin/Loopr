@@ -1,5 +1,6 @@
 /* Loopr Bytecode Standard */
 #include <wchar.h>
+#include <inttypes.h>
 
 /* Four basic part of VM:
  * 1.Byte
@@ -33,14 +34,18 @@ typedef enum {
 	LPR_MUL_BYTE,
 	LPR_DIV_BYTE,
 
-	LPR_JUMP,
-	LPR_EXIT,
+	LPR_CALL,
+	LPR_LOAD_ARG,
+
+	LPR_GOTO,
+	LPR_RETURN,
 	LPR_CODE_PLUS_1
 } LooprCodeGroup;
 
 typedef enum {
 	LCR_ENTRANCE = 1,
 	LCR_MAX_STACK,
+	LCR_FUNCTION,
 	LCR_CODE_PLUS_1
 } LooprCodeCompilerReference;
 
@@ -51,15 +56,15 @@ typedef enum {
 
 typedef wchar_t			Loopr_Char;
 
-typedef signed char 	Loopr_SByte;
-typedef short		 	Loopr_Int16;
-typedef int 			Loopr_Int32;
-typedef long	 		Loopr_Int64;
+typedef int8_t		 	Loopr_SByte;
+typedef int16_t		 	Loopr_Int16;
+typedef int32_t 		Loopr_Int32;
+typedef int64_t	 		Loopr_Int64;
 
-typedef unsigned char 	Loopr_Byte;
-typedef unsigned short	Loopr_UInt16;
-typedef unsigned int 	Loopr_UInt32;
-typedef unsigned long	Loopr_UInt64;
+typedef uint8_t 		Loopr_Byte;
+typedef uint16_t		Loopr_UInt16;
+typedef uint32_t 		Loopr_UInt32;
+typedef uint64_t		Loopr_UInt64;
 
 typedef float			Loopr_Single;
 typedef double			Loopr_Double;
@@ -146,6 +151,8 @@ typedef struct LocalVariable_tag {
 } LocalVariable;
 
 typedef struct ByteContainer_tag {
+	char *name;
+
 	Loopr_Int32 next;
 	Loopr_Int32 alloc_size;
 
@@ -157,4 +164,21 @@ typedef struct ByteContainer_tag {
 
 	Loopr_Int32 local_variable_count;
 	LocalVariable *local_variable;
+
+	Loopr_Int32 function_count;
+	struct ByteContainer_tag **function;
+
+	struct ByteContainer_tag *outer_env;
 } ByteContainer;
+
+typedef struct ByteInfo_tag {
+	char *assembly_name;
+	Loopr_Int32 need_stack;
+	Loopr_Int32 stack_regulator;		
+} ByteInfo;
+
+typedef struct TypeInfo_tag {
+	char *short_name;
+	char *assembly_name;
+	Loopr_Int32 size;		
+} TypeInfo;

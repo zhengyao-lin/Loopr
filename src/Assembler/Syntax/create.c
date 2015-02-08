@@ -3,6 +3,8 @@
 #include "MEM.h"
 #include "Assembler.h"
 
+extern ByteInfo Loopr_CR_Info[];
+
 int
 get_current_line_number()
 {
@@ -66,13 +68,23 @@ Asm_chain_bytecode(Bytecode *list, char *identifier, Loopr_Byte code, Loopr_Bool
 Statement *
 Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 {
+	Asm_Compiler *compiler;
 	Statement *ret;
 
+	compiler = Asm_get_current_compiler();
 	ret = ASM_malloc(sizeof(Statement));
 	ret->label = label;
 	ret->bytecode = code;
 	ret->constant = const_opt;
 	ret->line_number = get_current_line_number();
+
+	if (code && code->name == NULL && code->next
+		&& !strcmp(code->next->name, Loopr_CR_Info[LCR_FUNCTION].assembly_name)) {
+		compiler->function_definition = MEM_realloc(compiler->function_definition,
+													sizeof(FunctionDefinition) * (compiler->function_count + 1));
+		compiler->function_definition[compiler->function_count].name = const_opt->u.string_value;
+		compiler->function_count++;
+	}
 
 	return ret;
 }
@@ -110,4 +122,15 @@ Asm_chain_statement_list(Statement *st, StatementList *list)
 	pos->next = list;
 
 	return pos;
+}
+
+Constant *
+Asm_create_block(StatementList *list)
+{
+	Constant *ret;
+
+	ret = Asm_alloc_constant(CONST_BLOCK);
+	ret->u.block = list;
+
+	return ret;
 }

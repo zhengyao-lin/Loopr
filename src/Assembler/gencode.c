@@ -5,6 +5,8 @@
 #include "SandBox_pri.h"
 #include "Assembler.h"
 
+static int nullv = 0x0;
+
 struct ConstTypeMapping_tag {
 	ConstantType const_type;
 	Loopr_BasicType basic_type;
@@ -80,10 +82,12 @@ Gencode_search_type(char *name)
 	return -1;
 }
 
+static void Gencode_statement(ByteContainer *env, Statement *list);
+static void Gencode_statement_list(ByteContainer *env, StatementList *list);
+
 static void
 Gencode_push_constant(ByteContainer *env, Constant *constant)
 {
-	int nullv = 0x0;
 	Loopr_BasicType type;
 
 	if (constant == NULL) {
@@ -107,22 +111,31 @@ Gencode_push_constant(ByteContainer *env, Constant *constant)
 		case CONST_SINGLE:
 		case CONST_DOUBLE:
 			Coding_push_code(env, LPR_NULL_CODE,
-					 		 &constant->u.int64_value,
+					 		 (Loopr_Byte *)&constant->u.int64_value,
 					 		 Loopr_Type_Info[type].size);
 			break;
 		case CONST_STRING:
 			Coding_push_code(env, LPR_NULL_CODE,
-							 constant->u.string_value,
+							 (Loopr_Byte *)constant->u.string_value,
 							 strlen(constant->u.string_value) + 1);
 			MEM_free(constant->u.string_value);
 			break;	
 		case CONST_LABEL:
 			Label_ref(constant->u.string_value, env->next);
 			Coding_push_code(env, LPR_NULL_CODE,
-					 		 &nullv,
+					 		 (Loopr_Byte *)&nullv,
 					 		 sizeof(Loopr_Int32));
 			MEM_free(constant->u.string_value);
 			break;
+		case CONST_BLOCK: {
+			StatementList *pos;
+			StatementList *last;
+
+			for (pos = constant->u.block; pos; last = pos, pos = pos->next, ASM_free(last)) {
+				Gencode_statement(env, pos->statement);
+			}
+			break;
+		}
 		default:
 			DBG_panic(("line %d: Unknown constant type %d\n", constant->line_number, constant->type));
 			break;
@@ -155,15 +168,20 @@ Gencode_push_type_args(ByteContainer *env, Bytecode *code)
 		if (!pos->has_fixed) {
 			type = Gencode_search_type(pos->name);
 			if (type < LPR_BASIC_TYPE_PLUS_1 && type > 0) {
-				Coding_push_code(env, LPR_NULL_CODE, &type, 1);
+				Coding_push_code(env, LPR_NULL_CODE, (Loopr_Byte *)&type, 1);
 			} else {
-				DBG_panic(("line %d: Unknown type argument \"%s\"\n", pos->line_number, pos->name));
+				type = Gencode_search_code(pos->name);
+				if ((Loopr_Byte)type < LPR_CODE_PLUS_1 && type > 0) {
+					Coding_push_code(env, type, NULL, 0);
+				} else {
+					DBG_panic(("line %d: Unknown type argument \"%s\"\n", pos->line_number, pos->name));
+				}
 			}
 			MEM_free(pos->name);
 			pos->has_fixed = LPR_True;
 		} else {
 			type = pos->code;
-			Coding_push_code(env, LPR_NULL_CODE, &type, 1);
+			Coding_push_code(env, LPR_NULL_CODE, (Loopr_Byte *)&type, 1);
 		}
 	}
 
@@ -173,7 +191,6 @@ Gencode_push_type_args(ByteContainer *env, Bytecode *code)
 static void
 Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 {
-	Constant *pos;
 	Loopr_BasicType type;
 
 	Coding_push_code(env, LPR_LD_BYTE, NULL, 0);
@@ -182,21 +199,18 @@ Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 		type = Gencode_push_type_args(env, list->bytecode->next);
 	} else {
 		type = const_type_mapping[list->constant->type].basic_type;
-		Coding_push_code(env, LPR_NULL_CODE, &type, 1);
+		Coding_push_code(env, LPR_NULL_CODE, (Loopr_Byte *)&type, 1);
 	}
 
 	Coding_push_code(env, LPR_NULL_CODE,
-					 &list->constant->u.int64_value,
+					 (Loopr_Byte *)&list->constant->u.int64_value,
 					 Loopr_Type_Info[type].size);
 	ASM_free(list->constant);
 	return;
 }
 
-static void Gencode_statement(ByteContainer *env, Statement *list);
-static void Gencode_statement_list(ByteContainer *env, StatementList *list);
-
 static void
-Gencode_function(ByteContainer *env, char *name, int argc, Statement *block)
+Gencode_function(ByteContainer *env, char *name, int argc, StatementList *block)
 {
 	int i;
 	ByteContainer *new_func;
@@ -326,7 +340,7 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			Coding_push_code(env, code, NULL, 0);
 			Gencode_push_type_args(env, list->bytecode->next);
 			Coding_push_code(env, LPR_NULL_CODE,
-							 &index,
+							 (Loopr_Byte *)&index,
 							 sizeof(Loopr_Int32));
 			MEM_free(list->constant->u.string_value);
 			ASM_free(list->constant);
@@ -335,14 +349,42 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			Coding_push_code(env, code, NULL, 0);
 			index = Gencode_get_function_index(env, list->constant->u.string_value);
 			Coding_push_code(env, LPR_NULL_CODE,
-							 &index,
+							 (Loopr_Byte *)&index,
 							 sizeof(Loopr_Int32));
 			Coding_push_code(env, LPR_NULL_CODE,
-							 &list->constant->next->u.int32_value,
+							 (Loopr_Byte *)&list->constant->next->u.int32_value,
 							 sizeof(Loopr_Int32));
 			MEM_free(list->constant->u.string_value);
 			ASM_free(list->constant);
 			ASM_free(list->constant->next);
+			break;
+		case LPR_BRANCH:
+			Coding_push_code(env, code, NULL, 0);
+
+			if (list->bytecode->next != NULL) {
+				Gencode_push_type_args(env, list->bytecode->next);
+			} else {
+				DBG_panic(("line %d: no argument for code \"br\" ( suppose to be true or false )\n", list->line_number));
+			}
+
+			if (list->constant != NULL && list->constant->type == CONST_BLOCK) {
+				index = env->next;
+
+				if (env->code[env->next-1]) {
+					env->code[env->next-1] = LPR_False;
+				} else {
+					env->code[env->next-1] = LPR_True;
+				}
+
+				Coding_push_code(env, LPR_NULL_CODE,
+								 (Loopr_Byte *)&nullv,
+								 sizeof(Loopr_Int32));
+				Gencode_push_constant_list(env, list->constant);
+				memcpy(&env->code[index],
+					   &env->next, sizeof(Loopr_Int32));
+			} else {
+				Gencode_push_constant_list(env, list->constant);
+			}
 			break;
 		case LPR_NULL_CODE:
 			DBG_panic(("line %d: \"dummy\" is not any useful code\n", list->line_number));

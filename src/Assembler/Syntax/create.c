@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <string.h>
 #include "LBS.h"
 #include "MEM.h"
 #include "Assembler.h"
@@ -92,7 +92,6 @@ Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 StatementList *
 Asm_create_statement_list(Statement *st)
 {
-	extern char *yytext;
 	StatementList *ret = NULL;
 
 	ret = ASM_malloc(sizeof(StatementList));

@@ -119,6 +119,8 @@ Walle_dispose_value(Loopr_Value **target)
 		case LPR_STRING:
 			MEM_free((*target)->u.string_value);
 			break;
+		default:
+			break;
 	}
 	MEM_free((*target)->table);
 
@@ -204,7 +206,7 @@ Walle_dispose_environment(ExeEnvironment *env)
 }
 
 void
-Walle_dispose_byte_container(ByteContainer *env)
+Walle_dispose_byte_container(ByteContainer *env, Loopr_Boolean flag_clean_code)
 {
 	int i;
 
@@ -213,9 +215,12 @@ Walle_dispose_byte_container(ByteContainer *env)
 	}
 
 	for (i = 0; i < env->function_count; i++) {
-		Walle_dispose_byte_container(env->function[i]);
+		Walle_dispose_byte_container(env->function[i], flag_clean_code);
 	}
 	MEM_free(env->function);
+	if (flag_clean_code) {
+		MEM_free(env->code);
+	}
 
 	MEM_free(env);
 

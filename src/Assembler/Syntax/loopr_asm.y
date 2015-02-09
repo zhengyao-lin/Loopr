@@ -19,7 +19,6 @@
 %token <constant>		DIGIT_LITERAL
 %token <constant>		FLOAT_LITERAL
 %token <constant>		STRING_LITERAL
-%token <constant>		TRUE_C FALSE_C
 
 %type <identifier> label
 %type <bytecode> dot_bytecode compiler_ref
@@ -85,8 +84,6 @@ constant
 	| DIGIT_LITERAL
 	| FLOAT_LITERAL
 	| STRING_LITERAL
-	| TRUE_C
-	| FALSE_C
 	| IDENTIFIER
 	{
 		Constant *constant = Asm_alloc_constant(CONST_LABEL);

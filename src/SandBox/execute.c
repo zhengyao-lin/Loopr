@@ -148,8 +148,8 @@ Private_copy_variable(Loopr_Value *src)
 				}
 				break;
 			default:
-				ret_value->u = src->u;
-				break;
+					ret_value->u = src->u;
+					break;
 		}
 	} else {
 		ret_value = NULL;
@@ -184,21 +184,6 @@ Private_load_local_variable(ExeEnvironment *env, int index)
 }
 
 static void
-Private_dispose_value(Loopr_Value **target)
-{
-	switch ((*target)->table->type) {
-		case LPR_STRING:
-			MEM_free((*target)->u.string_value);
-			break;
-	}
-	MEM_free((*target)->table);
-	MEM_free(*target);
-	*target = NULL;
-
-	return;
-}
-
-static void
 Private_expand_stack(Loopr_Stack *orig, int resize)
 {
 	orig->value = MEM_realloc(orig->value, sizeof(Loopr_Value *) * resize);
@@ -215,9 +200,8 @@ Private_mark_value(Loopr_Value *obj)
 	}
 
 	obj->marked = LPR_True;
-	switch (obj->table->type) {
-		case LPR_OBJECT:
-			Private_mark_value(obj->u.object_value);
+	if (obj->table->type == LPR_OBJECT) {
+		Private_mark_value(obj->u.object_value);
 	}
 
 	return;
@@ -241,8 +225,6 @@ Private_get_top_level()
 static void
 Private_init_function(ExeEnvironment *env)
 {
-	int i;
-
 	env->stack.stack_pointer = -1;
 	env->local_variable_count = 0;
 
@@ -420,6 +402,22 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
+			case LPR_BRANCH: {
+				if ((ST_INT64(env->stack, 0) && env->code[pc + 1])
+					|| !(ST_INT64(env->stack, 0) || env->code[pc + 1])) {
+					Loopr_byte_deserialize(&pc, &env->code[pc + 2], sizeof(Loopr_Int32));
+				} else {
+					pc += 2 + sizeof(Loopr_Int32);
+				}
+				env->stack.stack_pointer--;
+				break;
+			}
+			case LPR_DUPLICATE: {
+				ST(env->stack, 1) = Private_copy_variable(ST(env->stack, 0));
+				env->stack.stack_pointer++;
+				pc++;
+				break;
+			}
 			case LPR_ADD_BYTE: {
 				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) + ST_INT64(env->stack, 0));
 				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
@@ -497,6 +495,10 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				goto EXECUTE_END;
 				break;
 			}
+			case LPR_NOP: {
+				pc++;
+				break;
+			}
 			default: {
 				if (env->wflag != LPR_NOTHING) {
 					DBG_panic(("Undefined bytecode %d in pc %d\n", env->code[pc], pc));
@@ -505,10 +507,11 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				}
 			}
 		}
-		Walle_reset_mark();
-		Private_walle_marker_traversal(Private_get_top_level());
-		Walle_check_mem();
-
+		if (Walle_get_alloc_size() >= Walle_get_threshold()) {
+			Walle_reset_mark();
+			Private_walle_marker_traversal(Private_get_top_level());
+			Walle_check_mem();
+		}
 	}
 	EXECUTE_END:;
 

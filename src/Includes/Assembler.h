@@ -38,22 +38,22 @@ typedef enum {
 typedef struct Constant_tag {
 	ConstantType type;
 	union {
-		Loopr_Char			*string_value;
-		Loopr_Char			char_value;
-		Loopr_Byte			byte_value;
+		char						*string_value;
+		Loopr_Char					char_value;
+		Loopr_Byte					byte_value;
 
-		Loopr_Int16			int16_value;
-		Loopr_UInt16		uint16_value;
+		Loopr_Int16					int16_value;
+		Loopr_UInt16				uint16_value;
 
-		Loopr_Int32			int32_value;
-		Loopr_UInt32		uint32_value;
+		Loopr_Int32					int32_value;
+		Loopr_UInt32				uint32_value;
 
-		Loopr_Int64			int64_value;
-		Loopr_UInt64		uint64_value;
-		Loopr_Single		single_value;
-		Loopr_Double		double_value;
+		Loopr_Int64					int64_value;
+		Loopr_UInt64				uint64_value;
+		Loopr_Single				single_value;
+		Loopr_Double				double_value;
 
-		struct Statement_tag *block;
+		struct StatementList_tag	*block;
 	} u;
 
 	int line_number;

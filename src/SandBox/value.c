@@ -81,13 +81,13 @@ Loopr_create_string(Loopr_Byte *data, int *offset)
 	int length;
 	Loopr_Value *ret;
 
-	length = Loopr_mbstowcs_len(data);
-	*offset = strlen(data) + 1;
+	length = Loopr_mbstowcs_len((char *)data);
+	*offset = strlen((char *)data) + 1;
 
 	ret = Loopr_alloc_value(LPR_STRING);
 
 	ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (length + 1));
-	Loopr_mbstowcs(data, ret->u.string_value);
+	Loopr_mbstowcs((char *)data, ret->u.string_value);
 
 	return ret;
 }
@@ -95,9 +95,6 @@ Loopr_create_string(Loopr_Byte *data, int *offset)
 Loopr_Value *
 Loopr_create_null()
 {
-	/*Loopr_Value *ret;
-	ret = Loopr_alloc_value(LPR_NULL);
-	MEM_fill(ret->u, NULL_VALUE);*/
 	return NULL;
 }
 

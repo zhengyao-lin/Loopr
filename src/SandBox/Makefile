@@ -1,5 +1,5 @@
 TARGET = SandBox.o
-CFLAGS = -c -g -DDEBUG -Wall -ansi -pedantic -Wswitch-enum
+CFLAGS = -c -g -DDEBUG -Wall -ansi -pedantic -Wswitch-enum -std=c99
 OBJS = \
 	execute.o \
 	value.o \

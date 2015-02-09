@@ -2,6 +2,7 @@
 #include <string.h>
 #include <locale.h>
 #include <time.h>
+#include "SandBox_pri.h"
 #include "MEM.h"
 #include "UTL.h"
 #include "DBG.h"
@@ -11,6 +12,8 @@ int main(int argc, char **argv)
 {
 	FILE *fp = NULL;
 	ByteContainer *container;
+	ExeEnvironment *env;
+
 	setlocale(LC_ALL, "");
 #if 1
 
@@ -28,7 +31,7 @@ int main(int argc, char **argv)
 	container = ISerialize_read_byte_container(fp);
 	fclose(fp);
 
-	ExeEnvironment *env = Coding_init_exe_env(container, LPR_ANYTHING);
+	env = Coding_init_exe_env(container, LPR_ANYTHING);
 
 	Loopr_execute(env, LPR_True);
 #endif
@@ -36,7 +39,7 @@ int main(int argc, char **argv)
 Walle_reset_mark();
 Walle_gcollect();
 Walle_dispose_environment(env);
-MEM_free(container);
+Walle_dispose_byte_container(container, LPR_False);
 MEM_dump_blocks(stderr);
 
 	return 0;

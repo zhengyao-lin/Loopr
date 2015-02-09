@@ -28,18 +28,41 @@ popb
 	ldarg.2
 	mulb
 	mulb
+	ldarg.3
+	popstr
 
 	ret
 }
 
+.function "BoolToString",1 {
+	ldarg.0
+	br.true {
+		ldstr "true"
+		ret
+	}
+	ldstr "false"
+	ret
+}
+
+LOOP1:
+
+ldb '\033'
+popb
+
+ldb true
+call "BoolToString", 1
+popstr
+
 ldb 5
 ldb 6
 ldb 7
-call TRIMUL, 3;
+call TRIMUL, 3
 ldb 8
 ldb 9
-call TRIMUL, 3;
+call TRIMUL, 3
 popb
+//goto LOOP1
 
+EXIT:
 //exit
 ret

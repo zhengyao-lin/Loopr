@@ -27,6 +27,9 @@ typedef enum {
 
 	LPR_STORE_LOC,
 
+	LPR_BRANCH,
+	LPR_DUPLICATE,
+
 	LPR_ADD_BYTE,
 	LPR_ADD_FLOAT,
 	LPR_ADD_STRING,
@@ -39,6 +42,8 @@ typedef enum {
 
 	LPR_GOTO,
 	LPR_RETURN,
+
+	LPR_NOP,
 	LPR_CODE_PLUS_1
 } LooprCodeGroup;
 
@@ -70,8 +75,6 @@ typedef float			Loopr_Single;
 typedef double			Loopr_Double;
 
 typedef enum {
-	LPR_DUMMY = 0,
-
 	/* State Byte */
 	LPR_NULL = 1,
 

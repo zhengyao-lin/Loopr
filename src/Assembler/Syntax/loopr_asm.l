@@ -36,6 +36,82 @@ increment_line_number(void)
     Asm_get_current_compiler()->current_line_number++;
 }
 
+void
+get_float_const()
+{
+	Constant *constant;
+	char suffix = yytext[yyleng-1];
+
+	switch (suffix) {
+		case 'l':
+		case 'L':
+			constant = Asm_alloc_constant(CONST_DOUBLE);
+			sscanf(yytext, "%lf", &constant->u.double_value);
+			yylval.constant = constant;
+			break;
+		default:
+			constant = Asm_alloc_constant(CONST_SINGLE);
+			sscanf(yytext, "%f", &constant->u.single_value);
+			yylval.constant = constant;
+			break;
+	}
+
+	return;
+}
+
+void
+get_digit_const(char *controller)
+{
+	Constant *constant;
+	ConstantType type = 0;
+	int p = yyleng - 1;
+	int offset = 0;
+	char suffix = yytext[p];
+
+	if (yytext[0] == '#') {
+		type = CONST_BYTE;
+		offset = 1;
+		goto ENDLOOP;
+	}
+
+LOOP:
+	switch (suffix) {
+		case 'l':
+		case 'L':
+			type += CONST_INT64;
+			break;
+		case 's':
+		case 'S':
+			type += CONST_INT16;
+			break;
+		case 'u':
+		case 'U':
+			type++;
+			break;
+		default:
+			if (type <= 1) {
+				type += CONST_INT32;
+				goto ENDLOOP;
+			} else if (type > CONST_UINT64) {
+				DBG_panic(("Too much digit  affix\n"));
+			} else {
+				goto ENDLOOP;
+			}
+	}
+	if (p > 0) {
+		p--;
+		suffix = yytext[p];
+		goto LOOP;
+	}
+
+ENDLOOP:
+	constant = Asm_alloc_constant(type);
+	sscanf(yytext + offset, controller, &constant->u.int64_value);
+	yylval.constant = constant;
+
+	return;
+}
+
 typedef enum {
 	ASM_DEC,
 	ASM_HEX,
@@ -52,14 +128,14 @@ Loopr_Boolean st_character_literal_state;
 	constant = Asm_alloc_constant(CONST_BYTE);
 	constant->u.byte_value = LPR_True;
 	yylval.constant = constant;
-	return TRUE_C;
+	return DIGIT_LITERAL;
 }
 <INITIAL>"false" {
 	Constant *constant;
 	constant = Asm_alloc_constant(CONST_BYTE);
 	constant->u.byte_value = LPR_False;
 	yylval.constant = constant;
-	return FALSE_C;
+	return DIGIT_LITERAL;
 }
 <INITIAL>":"		return COLON;
 <INITIAL>","		return COMMA;
@@ -180,79 +256,3 @@ Loopr_Boolean st_character_literal_state;
     Asm_add_string_literal(yytext[0]);
 }
 %%
-
-void
-get_float_const()
-{
-	Constant *constant;
-	char suffix = yytext[yyleng-1];
-
-	switch (suffix) {
-		case 'l':
-		case 'L':
-			constant = Asm_alloc_constant(CONST_DOUBLE);
-			sscanf(yytext, "%lf", &constant->u.double_value);
-			yylval.constant = constant;
-			break;
-		default:
-			constant = Asm_alloc_constant(CONST_SINGLE);
-			sscanf(yytext, "%f", &constant->u.single_value);
-			yylval.constant = constant;
-			break;
-	}
-
-	return;
-}
-
-void
-get_digit_const(char *controller)
-{
-	Constant *constant;
-	ConstantType type = 0;
-	int p = yyleng - 1;
-	int offset = 0;
-	char suffix = yytext[p];
-
-	if (yytext[0] == '#') {
-		type = CONST_BYTE;
-		offset = 1;
-		goto ENDLOOP;
-	}
-
-LOOP:
-	switch (suffix) {
-		case 'l':
-		case 'L':
-			type += CONST_INT64;
-			break;
-		case 's':
-		case 'S':
-			type += CONST_INT16;
-			break;
-		case 'u':
-		case 'U':
-			type++;
-			break;
-		default:
-			if (type <= 1) {
-				type += CONST_INT32;
-				goto ENDLOOP;
-			} else if (type > CONST_UINT64) {
-				DBG_panic(("Too much digit  affix\n"));
-			} else {
-				goto ENDLOOP;
-			}
-	}
-	if (p > 0) {
-		p--;
-		suffix = yytext[p];
-		goto LOOP;
-	}
-
-ENDLOOP:
-	constant = Asm_alloc_constant(type);
-	sscanf(yytext + offset, controller, &constant->u.int64_value);
-	yylval.constant = constant;
-
-	return;
-}

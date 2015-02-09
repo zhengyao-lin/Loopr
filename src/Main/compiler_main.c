@@ -7,9 +7,11 @@
 #include "UTL.h"
 #include "DBG.h"
 #include "Assembler.h"
+#include "Interfaces.h"
 #define DEFAULT_EXE "a.lexe"
 
 ByteContainer *Gencode_compile(Asm_Compiler *compiler);
+int yylex_destroy();
 
 int main(int argc, char **argv)
 {
@@ -44,8 +46,7 @@ int main(int argc, char **argv)
 	Asm_dispose_current_compiler();
 
 #endif
-MEM_free(container->code);
-Walle_dispose_byte_container(container);
+Walle_dispose_byte_container(container, LPR_True);
 MEM_dump_blocks(stderr);
 
 	return 0;

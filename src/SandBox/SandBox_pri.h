@@ -100,6 +100,7 @@ void Walle_gcollect();
 void Walle_check_mem();
 
 void Walle_dispose_environment(ExeEnvironment *env);
+void Walle_dispose_byte_container(ByteContainer *env, Loopr_Boolean flag_clean_code);
 
 extern ByteInfo Loopr_Byte_Info[];
 extern TypeInfo Loopr_Type_Info[];

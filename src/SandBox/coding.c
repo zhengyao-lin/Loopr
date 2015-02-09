@@ -22,6 +22,9 @@ ByteInfo Loopr_Byte_Info[] = {
 
 	{"stloc",	1,	-1},
 
+	{"br",		1,	-1},
+	{"dup",		1,	1},
+
 	{"addb",	2,	-1},
 	{"addf",	2,	-1},
 	{"addstr",	2,	-1},
@@ -34,6 +37,7 @@ ByteInfo Loopr_Byte_Info[] = {
 
 	{"goto",	0,	0},
 	{"ret",		0,	0},
+	{"nop",		0,	0}
 };
 
 Loopr_Byte *
@@ -96,8 +100,9 @@ Coding_get_local_variable_index(ByteContainer *env, char *name)
 {
 	int i;
 	for (i = 0; i < env->local_variable_count; i++) {
-		if (!strcmp(env->local_variable[i].identifier,
-					name)) {
+		if (env->local_variable[i].identifier
+			&& !strcmp(env->local_variable[i].identifier,
+					   name)) {
 			return i;
 		}
 	}

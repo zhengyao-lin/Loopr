@@ -121,7 +121,7 @@ Loopr_wcstombs_alloc(const wchar_t *src)
 }
 
 wchar_t *
-Loopr_wcsdup(const wchar_t *src)
+Loopr_wcsdup(wchar_t *src)
 {
 	int len;
 	wchar_t *ret;

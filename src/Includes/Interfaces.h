@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "SandBox_pri.h"
 
 /* executable.c */
 size_t ISerialize_save_bytecode(FILE *fp, Loopr_Byte *src, size_t length);

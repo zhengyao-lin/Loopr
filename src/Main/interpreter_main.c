@@ -9,11 +9,14 @@
 #include "Assembler.h"
 
 ByteContainer *Gencode_compile(Asm_Compiler *compiler);
+int yylex_destroy();
 
 int main(int argc, char **argv)
 {
 	FILE *fp = NULL;
 	ByteContainer *container;
+	ExeEnvironment *env;
+
 	setlocale(LC_ALL, "");
 #if 1
 
@@ -31,7 +34,7 @@ int main(int argc, char **argv)
 	yylex_destroy();
 	Asm_dispose_current_compiler();
 
-	ExeEnvironment *env = Coding_init_exe_env(container, LPR_ANYTHING);
+	env = Coding_init_exe_env(container, LPR_ANYTHING);
 
 	Loopr_execute(env, LPR_True);
 #endif
@@ -39,7 +42,7 @@ int main(int argc, char **argv)
 Walle_reset_mark();
 Walle_gcollect();
 Walle_dispose_environment(env);
-Walle_dispose_byte_container(container);
+Walle_dispose_byte_container(container, LPR_False);
 MEM_dump_blocks(stderr);
 
 	return 0;

@@ -36,6 +36,8 @@ typedef enum {
 	LPR_SUB_BYTE,
 	LPR_MUL_BYTE,
 	LPR_DIV_BYTE,
+	LPR_INC,
+	LPR_DEC,
 
 	LPR_CALL,
 	LPR_LOAD_ARG,

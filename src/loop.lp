@@ -44,6 +44,12 @@ popb
 	ret
 }
 
+.function "Printk", 1 {
+	ldarg.0
+	popstr
+	ret
+}
+
 LOOP1:
 
 ldb '\033'
@@ -62,6 +68,10 @@ ldb 9
 call TRIMUL, 3
 popb
 //goto LOOP1
+
+ldstr "printstr"
+call Printk, 1
+popstr
 
 EXIT:
 //exit

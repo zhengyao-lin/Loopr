@@ -31,6 +31,8 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"subb",	2,	-1},
 	{"mulb",	2,	-1},
 	{"divb",	2,	-1},
+	{"inc",		1,	0},
+	{"dec",		1,	0},
 
 	{"call",	0,	1},
 	{"ldarg",	0,	1},

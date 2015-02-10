@@ -222,13 +222,23 @@ Private_get_top_level()
 	return current_top_level;
 }
 
-static void
+static ExeEnvironment *
 Private_init_function(ExeEnvironment *env)
 {
-	env->stack.stack_pointer = -1;
-	env->local_variable_count = 0;
+	ExeEnvironment *ret;
 
-	return;
+	ret = MEM_malloc(sizeof(ExeEnvironment));
+	*ret = *env;
+	ret->stack.stack_pointer = -1;
+	ret->stack.alloc_size = env->stack.alloc_size;
+	ret->stack.value = MEM_malloc(sizeof(Loopr_Value *) * env->stack.alloc_size);
+	ret->local_variable_count = 0;
+	ret->local_variable = NULL;
+	ret->outer_env = NULL;	
+	ret->function_count = 0;
+	ret->function = NULL;
+
+	return ret;
 }
 
 static void
@@ -268,9 +278,15 @@ static int pri_i, pri_j;
 static Loopr_Value *
 Private_call_function(ExeEnvironment *env, int index, int argc)
 {
+	int orig;
 	outer = Private_get_top_level();
 
-	callee = outer->function[index];
+	callee = Private_init_function(outer->function[index]);
+	orig = outer->function_count;
+	outer->function = MEM_realloc(outer->function, sizeof(ExeEnvironment) * (outer->function_count + 1));
+	outer->function[outer->function_count] = callee;
+	outer->function_count++;
+
 	pri_i = -argc + 1;
 	if (argc > env->stack.stack_pointer + 1 && env->wflag != LPR_NOTHING) {
 		DBG_panic(("Too few stack for function\n"));
@@ -284,7 +300,11 @@ Private_call_function(ExeEnvironment *env, int index, int argc)
 	env->stack.stack_pointer -= argc; 
 
 	ret_value = Loopr_execute(callee, LPR_False);
-	Private_init_function(outer->function[index]);
+
+	for (pri_i = outer->function_count - 1; pri_i >= orig; pri_i--) {
+		Walle_dispose_function(outer->function[pri_i]);
+	}
+	outer->function_count = orig;
 
 	return ret_value;
 }
@@ -302,9 +322,9 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 		Private_set_top_level(env);
 	}
 	for (; pc < env->code_length;) {
-		printf("%s%4d:\t%-15ssp(%d)\n", (!top_level ? LOWER_LEVEL : ""), pc,
+		/*printf("%s%4d:\t%-15ssp(%d)\n", (!top_level ? LOWER_LEVEL : ""), pc,
 			   Loopr_Byte_Info[env->code[pc]].assembly_name,
-			   env->stack.stack_pointer);
+			   env->stack.stack_pointer);*/
 
 		if (env->stack.stack_pointer < (Loopr_Byte_Info[env->code[pc]].need_stack - 1)
 			&& env->wflag != LPR_NOTHING) {
@@ -403,11 +423,11 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				break;
 			}
 			case LPR_BRANCH: {
-				if ((ST_INT64(env->stack, 0) && env->code[pc + 1])
-					|| !(ST_INT64(env->stack, 0) || env->code[pc + 1])) {
-					Loopr_byte_deserialize(&pc, &env->code[pc + 2], sizeof(Loopr_Int32));
+				if ((env->code[pc + 1] && ST_INT64(env->stack, 0) == env->code[pc + 2])
+					|| !(env->code[pc + 1] || ST_INT64(env->stack, 0) == env->code[pc + 2])) {
+					Loopr_byte_deserialize(&pc, &env->code[pc + 3], sizeof(Loopr_Int32));
 				} else {
-					pc += 2 + sizeof(Loopr_Int32);
+					pc += 3 + sizeof(Loopr_Int32);
 				}
 				env->stack.stack_pointer--;
 				break;
@@ -461,6 +481,16 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
 												   ST_TYPE(env->stack, 0));
 				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_INC: {
+				ST_INT64(env->stack, 0)++;
+				pc++;
+				break;
+			}
+			case LPR_DEC: {
+				ST_INT64(env->stack, 0)--;
 				pc++;
 				break;
 			}

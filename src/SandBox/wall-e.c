@@ -2,7 +2,7 @@
 #include <time.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
-#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 1024)
+#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 32)
 
 static void (*__walle_marker)(void);
 static Loopr_Int64 __threshold = WALLE_COLLECT_THRESHOLD;
@@ -185,6 +185,31 @@ Walle_dispose_environment(ExeEnvironment *env)
 	int i;
 
 	MEM_free(env->code);
+	MEM_free(env->stack.value);
+	for (i = 0; i < env->local_variable_count; i++) {
+		if (env->local_variable[i].identifier) {
+			MEM_free(env->local_variable[i].identifier);
+		}
+	}
+	if (env->local_variable) {
+		MEM_free(env->local_variable);
+	}
+
+	for (i = 0; i < env->function_count; i++) {
+		Walle_dispose_environment(env->function[i]);
+	}
+	MEM_free(env->function);
+
+	MEM_free(env);
+
+	return;
+}
+
+void
+Walle_dispose_function(ExeEnvironment *env)
+{
+	int i;
+
 	MEM_free(env->stack.value);
 	for (i = 0; i < env->local_variable_count; i++) {
 		if (env->local_variable[i].identifier) {

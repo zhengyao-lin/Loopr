@@ -6,6 +6,7 @@
 #include "Assembler.h"
 
 static int nullv = 0x0;
+static int not_nullv = LPR_True;
 
 struct ConstTypeMapping_tag {
 	ConstantType const_type;
@@ -360,6 +361,7 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			break;
 		case LPR_BRANCH:
 			Coding_push_code(env, code, NULL, 0);
+			Coding_push_code(env, LPR_NULL_CODE, &not_nullv, 1);
 
 			if (list->bytecode->next != NULL) {
 				Gencode_push_type_args(env, list->bytecode->next);
@@ -370,11 +372,7 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			if (list->constant != NULL && list->constant->type == CONST_BLOCK) {
 				index = env->next;
 
-				if (env->code[env->next-1]) {
-					env->code[env->next-1] = LPR_False;
-				} else {
-					env->code[env->next-1] = LPR_True;
-				}
+				env->code[env->next-2] = LPR_False;
 
 				Coding_push_code(env, LPR_NULL_CODE,
 								 (Loopr_Byte *)&nullv,

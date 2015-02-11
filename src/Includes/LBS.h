@@ -21,6 +21,7 @@ typedef enum {
 	LPR_BOXING,
 	LPR_UNBOXING,
 
+	LPR_POP,
 	LPR_POP_BYTE,
 	LPR_POP_FLOAT,
 	LPR_POP_STRING,
@@ -114,7 +115,7 @@ typedef struct Loopr_InfoTable_tag {
 } Loopr_InfoTable;
 
 typedef struct Loopr_Value_tag {
-	Loopr_Boolean marked:1;
+	Loopr_Int32 marked;
 
 	Loopr_InfoTable *table;
 	union {
@@ -142,6 +143,18 @@ typedef struct Loopr_Value_tag {
 	struct Loopr_Value_tag *prev;
 	struct Loopr_Value_tag *next;
 } Loopr_Value;
+
+typedef struct CallInfo_tag {
+	Loopr_Int32 marked;
+	Loopr_InfoTable *filler;
+
+	int code_length;
+	int caller_pc;
+	Loopr_Byte *caller_code;
+
+	int stack_pointer;
+	int base;
+} CallInfo;
 
 typedef struct Loopr_Stack_tag {
 	Loopr_Int32 alloc_size;

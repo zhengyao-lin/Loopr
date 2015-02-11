@@ -1,4 +1,5 @@
 .entry
+.maxstack 100
 
 goto __TRIMUL_END //jump throw function
 __TRIMUL: //Macro, multiply the last three stacks
@@ -22,20 +23,17 @@ CALL_BACK: //call back address
 popb
 
 .function "TRIMUL",3 {
-	initloc.i32 int32
-	ldarg.0
 	ldarg.1
 	ldarg.2
-	mulb
-	mulb
 	ldarg.3
-	popstr
+	mulb
+	mulb
 
 	ret
 }
 
 .function "BoolToString",1 {
-	ldarg.0
+	ldarg.1
 	br.true {
 		ldstr "true"
 		ret
@@ -45,7 +43,7 @@ popb
 }
 
 .function "Printk", 1 {
-	ldarg.0
+	ldarg.1
 	popstr
 	ret
 }
@@ -63,16 +61,9 @@ ldb 5
 ldb 6
 ldb 7
 call TRIMUL, 3
-ldb 8
-ldb 9
-call TRIMUL, 3
 popb
 //goto LOOP1
 
 ldstr "printstr"
 call Printk, 1
 popstr
-
-EXIT:
-//exit
-ret

@@ -83,6 +83,8 @@ ExeEnvironment *Coding_init_exe_env(ByteContainer *env, WarningFlag wflag);
 
 typedef void (*Walle_Marker)(void);
 /* wall-e.c */
+void Walle_update_alive_period();
+int Walle_get_alive_period();
 void Walle_set_header(Loopr_Value *v);
 Loopr_Value *Walle_get_header();
 void Walle_add_alloc_size(Loopr_Int64 add);

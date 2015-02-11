@@ -24,7 +24,7 @@ lex.yy.c : loopr_asm.l loopr_asm.y y.tab.h
 y.tab.o: y.tab.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h
 	$(CC) -c -g $*.c $(INCLUDES)
 lex.yy.o: lex.yy.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h
-	$(CC) -c -g $*.c $(INCLUDES)
+	$(CC) -c -g  $*.c $(INCLUDES)
 .c.o:
 	$(CC) $(CFLAGS) $*.c $(INCLUDES)
 

@@ -13,6 +13,7 @@ int yylex_destroy();
 
 int main(int argc, char **argv)
 {
+	int clockt;
 	FILE *fp = NULL;
 	ByteContainer *container;
 	ExeEnvironment *env;

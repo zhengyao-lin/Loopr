@@ -218,15 +218,14 @@ Gencode_function(ByteContainer *env, char *name, int argc, StatementList *block)
 
 	new_func = Coding_init_coding_env();
 	new_func->name = name;
-	for (i = 0; i < argc; i++)
-	{
-		Coding_init_local_variable(new_func, NULL);
-	}
 	new_func->outer_env = env;
 
 	Gencode_statement_list(new_func, block);
 	Asm_clean_local_env(new_func);
 
+	if (!new_func->hinted) {
+		new_func->stack_size += argc;
+	}
 	env->function = MEM_realloc(env->function, sizeof(ByteContainer *) * (env->function_count + 1));
 	env->function[env->function_count] = new_func;
 	env->function_count++;

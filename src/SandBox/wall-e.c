@@ -2,12 +2,27 @@
 #include <time.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
-#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 32)
+#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 1024)
 
 static void (*__walle_marker)(void);
 static Loopr_Int64 __threshold = WALLE_COLLECT_THRESHOLD;
 static Loopr_Int64 __allocd_size = 0;
 static Loopr_Value *__walle_header = NULL;
+static Loopr_Value *__walle_tail = NULL;
+static int __alive_period = 1;
+
+void
+Walle_update_alive_period()
+{
+	__alive_period++;
+	return;
+}
+
+int
+Walle_get_alive_period()
+{
+	return __alive_period;
+}
 
 void
 Walle_set_header(Loopr_Value *v)
@@ -65,17 +80,19 @@ void
 Walle_add_object(Loopr_Value *v)
 {
 	Loopr_Value *header;
+	Loopr_Value *tail;
 	Loopr_Value *pos;
 
 	header = Walle_get_header();
-	for (pos = header; pos && pos->next; pos = pos->next) {
-	}
+	tail = __walle_tail;
 
-	if (!pos) {
+	if (!tail) {
 		Walle_set_header(v);
+		__walle_tail = v;
 	} else {
-		pos->next = v;
-		v->prev = pos;
+		tail->next = v;
+		v->prev = tail;
+		__walle_tail = v;
 	}
 
 	v->next = NULL;
@@ -115,27 +132,23 @@ Walle_mark_all()
 void
 Walle_dispose_value(Loopr_Value **target)
 {
-	switch ((*target)->table->type) {
-		case LPR_STRING:
-			MEM_free((*target)->u.string_value);
-			break;
-		default:
-			break;
+	if ((*target)->table->type == LPR_STRING) {
+		MEM_free((*target)->u.string_value);
 	}
+
 	MEM_free((*target)->table);
 
-	if ((*target)->prev && (*target)->next) {
+	if ((*target)->prev) {
 		(*target)->prev->next = (*target)->next;
+	}
+	if ((*target)->next) {
 		(*target)->next->prev = (*target)->prev;
-	} else if ((*target)->prev) {
-		(*target)->prev->next = NULL;
-	} else if ((*target)->next) {
-		(*target)->next->prev = NULL;
+	}
+	if (!((*target)->prev || (*target)->next)) {
 		Walle_set_header((*target)->next);
 	}
 
 	MEM_free(*target);
-	*target = NULL;
 
 	return;
 }
@@ -153,7 +166,7 @@ Walle_gcollect()
 	}
 
 	for (pos = header; pos;) {
-		if (pos->marked != LPR_True) {
+		if (pos->marked != Walle_get_alive_period()) {
 			tmp = pos->next;
 			Walle_dispose_value(&pos);
 			Walle_add_alloc_size(-sizeof(Loopr_Value));

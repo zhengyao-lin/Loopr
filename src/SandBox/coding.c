@@ -16,6 +16,7 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"bx",		1,	0},
 	{"unbx",	1,	0},
 
+	{"pop",		1,	-1},
 	{"popb",	1,	-1},
 	{"popf",	1,	-1},
 	{"popstr",	1,	-1},
@@ -163,11 +164,11 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	}
 	stack_value = MEM_malloc(sizeof(Loopr_Value *) * (env->stack_size + 1));
 
-	ret->stack.alloc_size = env->stack_size + 1;
+	ret->stack.alloc_size = env->stack_size + 2; /* the last added two is for callinfo and overflow check */
 	ret->stack.stack_pointer = -1;
 	ret->stack.value = stack_value;
 	ret->local_variable_count = 0;
-	ret->local_variable = NULL;
+	ret->local_variable = MEM_malloc(sizeof(LocalVariable) * env->local_variable_count);
 
 	ret->outer_env = NULL;
 

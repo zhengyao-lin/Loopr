@@ -2,7 +2,7 @@
 #include <time.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
-#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 1024)
+#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 512)
 
 static void (*__walle_marker)(void);
 static Loopr_Int64 __threshold = WALLE_COLLECT_THRESHOLD;
@@ -79,52 +79,15 @@ Walle_get_marker()
 void
 Walle_add_object(Loopr_Value *v)
 {
-	Loopr_Value *header;
-	Loopr_Value *tail;
-	Loopr_Value *pos;
-
-	header = Walle_get_header();
-	tail = __walle_tail;
-
-	if (!tail) {
-		Walle_set_header(v);
-		__walle_tail = v;
+	if (!__walle_header) {
+		__walle_header = __walle_tail = v;
 	} else {
-		tail->next = v;
-		v->prev = tail;
+		__walle_tail->next = v;
+		v->prev = __walle_tail;
 		__walle_tail = v;
 	}
 
-	v->next = NULL;
-	Walle_add_alloc_size(sizeof(Loopr_Value));
-
-	return;
-}
-
-void
-Walle_reset_mark()
-{
-	Loopr_Value *header;
-	Loopr_Value *pos;
-
-	header = Walle_get_header();
-	for (pos = header; pos; pos = pos->next) {
-		pos->marked = LPR_False;
-	}
-
-	return;
-}
-
-void
-Walle_mark_all()
-{
-	Loopr_Value *header;
-	Loopr_Value *pos;
-
-	header = Walle_get_header();
-	for (pos = header; pos; pos = pos->next) {
-		pos->marked = LPR_True;
-	}
+	__allocd_size += sizeof(Loopr_Value);
 
 	return;
 }
@@ -132,45 +95,41 @@ Walle_mark_all()
 void
 Walle_dispose_value(Loopr_Value **target)
 {
-	if ((*target)->table->type == LPR_STRING) {
+	Loopr_Value *tmp;
+
+	if ((*target)->type == LPR_STRING) {
 		MEM_free((*target)->u.string_value);
 	}
 
-	MEM_free((*target)->table);
-
 	if ((*target)->prev) {
 		(*target)->prev->next = (*target)->next;
-	}
-	if ((*target)->next) {
-		(*target)->next->prev = (*target)->prev;
-	}
-	if (!((*target)->prev || (*target)->next)) {
-		Walle_set_header((*target)->next);
+	} else {
+		__walle_header = (*target)->next;
 	}
 
+	if ((*target)->next) {
+		(*target)->next->prev = (*target)->prev;
+	} else {
+		__walle_tail = (*target)->next;
+	}
+
+	tmp = (*target)->next;
 	MEM_free(*target);
+	*target = tmp;
+	__allocd_size -= sizeof(Loopr_Value);
 
 	return;
 }
 
+
 void
 Walle_gcollect()
 {
-	static Loopr_Value *header;
-	static Loopr_Value *pos;
-	static Loopr_Value *tmp;
+	Loopr_Value *pos;
 
-	header = Walle_get_header();
-	if (Walle_get_marker()) {
-		(*Walle_get_marker())();
-	}
-
-	for (pos = header; pos;) {
-		if (pos->marked != Walle_get_alive_period()) {
-			tmp = pos->next;
+	for (pos = __walle_header; pos;) {
+		if (pos->marked != __alive_period) {
 			Walle_dispose_value(&pos);
-			Walle_add_alloc_size(-sizeof(Loopr_Value));
-			pos = tmp;
 			continue;
 		}
 		pos = pos->next;
@@ -182,13 +141,21 @@ Walle_gcollect()
 void
 Walle_check_mem()
 {
-	if (Walle_get_alloc_size() >= Walle_get_threshold()) {
+	if (__allocd_size >= __threshold) {
 		Walle_gcollect();
-		if (Walle_get_alloc_size() >= Walle_get_threshold()) {
-			Walle_add_threshold(WALLE_COLLECT_THRESHOLD);
+		if (__allocd_size >= __threshold) {
+			__threshold += WALLE_COLLECT_THRESHOLD;
 		}
 	}
 
+	return;
+}
+
+void
+Walle_dispose_exe_container(ExeContainer *exe)
+{
+	MEM_free(exe->code);
+	MEM_free(exe);
 	return;
 }
 
@@ -197,12 +164,9 @@ Walle_dispose_environment(ExeEnvironment *env)
 {
 	int i;
 
-	MEM_free(env->code);
-	MEM_free(env->stack.value);
-	for (i = 0; i < env->local_variable_count; i++) {
-		if (env->local_variable[i].identifier) {
-			MEM_free(env->local_variable[i].identifier);
-		}
+	Walle_dispose_exe_container(env->exe);
+	if (env->stack.value) {
+		MEM_free(env->stack.value);
 	}
 	if (env->local_variable) {
 		MEM_free(env->local_variable);
@@ -210,34 +174,9 @@ Walle_dispose_environment(ExeEnvironment *env)
 
 	for (i = 0; i < env->function_count; i++) {
 		Walle_dispose_environment(env->function[i]);
+
 	}
 	MEM_free(env->function);
-
-	MEM_free(env);
-
-	return;
-}
-
-void
-Walle_dispose_function(ExeEnvironment *env)
-{
-	int i;
-
-	MEM_free(env->stack.value);
-	for (i = 0; i < env->local_variable_count; i++) {
-		if (env->local_variable[i].identifier) {
-			MEM_free(env->local_variable[i].identifier);
-		}
-	}
-	if (env->local_variable) {
-		MEM_free(env->local_variable);
-	}
-
-	for (i = 0; i < env->function_count; i++) {
-		Walle_dispose_environment(env->function[i]);
-	}
-	MEM_free(env->function);
-
 	MEM_free(env);
 
 	return;

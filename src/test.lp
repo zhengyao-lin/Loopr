@@ -1,10 +1,10 @@
 .maxstack 5
 .entry
 
-initloc.f8 float1
-initloc.f16 "double1"
-initloc.null "integer1"
-initloc.obj "object1"
+.def float1
+.def double1
+.def integer1
+.def object1
 
 ldstr "你好，我是林正耀0222你好"
 stloc "integer1"

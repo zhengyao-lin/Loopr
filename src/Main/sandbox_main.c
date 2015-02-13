@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	Loopr_execute(env, LPR_True);
 #endif
 
-Walle_reset_mark();
+Walle_update_alive_period();
 Walle_gcollect();
 Walle_dispose_environment(env);
 Walle_dispose_byte_container(container, LPR_False);

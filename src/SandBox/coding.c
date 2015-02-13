@@ -11,7 +11,6 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"ldstr",	0,	1},
 	{"ldloc",	0,	1},
 
-	{"initloc",	0,	0},
 	{"conv",	1,	0},
 	{"bx",		1,	0},
 	{"unbx",	1,	0},
@@ -147,28 +146,37 @@ Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args
 	return;
 }
 
+ExeContainer *
+Coding_alloc_exe_container(ByteContainer *env)
+{
+	ExeContainer *ret;
+
+	ret = MEM_malloc(sizeof(ExeContainer));
+	ret->entrance = ret->entrance = env->entrance;
+	ret->length = env->alloc_size;
+	ret->code = env->code;
+
+	return ret;
+}
+
 ExeEnvironment *
 Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 {
 	int i;
 	ExeEnvironment *ret;
-	Loopr_Value **stack_value;
 
 	ret = MEM_malloc(sizeof(ExeEnvironment));
 	ret->wflag = wflag;
-	ret->entrance = env->entrance;
-	ret->code_length = env->alloc_size;
-	ret->code = env->code;
+	ret->exe = Coding_alloc_exe_container(env);
 	if (env->stack_size < 0) {
 		DBG_panic(("negative stack size\n"));
 	}
-	stack_value = MEM_malloc(sizeof(Loopr_Value *) * (env->stack_size + 1));
 
 	ret->stack.alloc_size = env->stack_size + 2; /* the last added two is for callinfo and overflow check */
 	ret->stack.stack_pointer = -1;
-	ret->stack.value = stack_value;
-	ret->local_variable_count = 0;
-	ret->local_variable = MEM_malloc(sizeof(LocalVariable) * env->local_variable_count);
+	ret->stack.value = NULL;
+	ret->local_variable_count = env->local_variable_count;
+	ret->local_variable = NULL;
 
 	ret->outer_env = NULL;
 
@@ -176,7 +184,6 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->function = NULL;
 	if (env->function_count > 0) {
 		ret->function = MEM_malloc(sizeof(ExeEnvironment *) * ret->function_count);
-
 		for (i = 0; i < env->function_count; i++) {
 			ret->function[i] = Coding_init_exe_env(env->function[i], wflag);
 			ret->function[i]->outer_env = ret;

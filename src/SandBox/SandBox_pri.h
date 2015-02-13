@@ -43,9 +43,10 @@ typedef enum {
 typedef struct ExeEnvironment_tag {
 	WarningFlag wflag;
 
-	Loopr_Int32 entrance;
+	/*Loopr_Int32 entrance;
 	Loopr_Int32 code_length;
-	Loopr_Byte *code;
+	Loopr_Byte *code;*/
+	ExeContainer *exe;
 	Loopr_Stack stack;
 
 	Loopr_Int32 local_variable_count;
@@ -62,13 +63,13 @@ Loopr_Value *Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level);
 
 /* value.c */
 Loopr_Byte *Loopr_byte_serialize(const void *data, int length);
-void*
-Loopr_byte_deserialize(void *dest, const Loopr_Byte *data, int length);
+#define Loopr_byte_deserialize(dest, data, length) \
+	(memcpy((dest), (data), (length)))
 
 Loopr_InfoTable *Loopr_alloc_info_table(Loopr_BasicType type);
 Loopr_Value *Loopr_alloc_value(Loopr_BasicType type);
 Loopr_Value *Loopr_create_string(Loopr_Byte *data, int *offset);
-Loopr_Value *Loopr_create_null();
+#define Loopr_create_null() (NULL)
 Loopr_Value *Loopr_create_object(Loopr_Value *orig);
 Loopr_Value *Loopr_get_init_value(Loopr_BasicType type);
 
@@ -79,6 +80,7 @@ int Coding_init_local_variable(ByteContainer *env, char *identifier);
 int Coding_get_local_variable_index(ByteContainer *env, char *name);
 void Coding_byte_cat(ByteContainer *env, Loopr_Byte *src, int count);
 void Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args_count);
+ExeContainer *Coding_alloc_exe_container(ByteContainer *env);
 ExeEnvironment *Coding_init_exe_env(ByteContainer *env, WarningFlag wflag);
 
 typedef void (*Walle_Marker)(void);
@@ -95,14 +97,11 @@ void Walle_set_marker(Walle_Marker marker);
 Walle_Marker Walle_get_marker();
 
 void Walle_add_object(Loopr_Value *v);
-void Walle_reset_mark();
-void Walle_mark_all();
 void Walle_dispose_value(Loopr_Value **target);
 void Walle_gcollect();
 void Walle_check_mem();
 
 void Walle_dispose_environment(ExeEnvironment *env);
-void Walle_dispose_function(ExeEnvironment *env);
 void Walle_dispose_byte_container(ByteContainer *env, Loopr_Boolean flag_clean_code);
 
 extern ByteInfo Loopr_Byte_Info[];

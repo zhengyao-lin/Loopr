@@ -13,7 +13,6 @@ int yylex_destroy();
 
 int main(int argc, char **argv)
 {
-	int clockt;
 	FILE *fp = NULL;
 	ByteContainer *container;
 	ExeEnvironment *env;
@@ -34,13 +33,11 @@ int main(int argc, char **argv)
 	fclose(fp);
 	yylex_destroy();
 	Asm_dispose_current_compiler();
-
 	env = Coding_init_exe_env(container, LPR_ANYTHING);
 
 	Loopr_execute(env, LPR_True);
 #endif
-
-Walle_reset_mark();
+Walle_update_alive_period();
 Walle_gcollect();
 Walle_dispose_environment(env);
 Walle_dispose_byte_container(container, LPR_False);

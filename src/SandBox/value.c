@@ -41,12 +41,6 @@ Loopr_byte_serialize(const void *data, int length)
 	return ret;
 }
 
-void*
-Loopr_byte_deserialize(void *dest, const Loopr_Byte *data, int length)
-{
-	return memcpy(dest, data, length);
-}
-
 Loopr_InfoTable *
 Loopr_alloc_info_table(Loopr_BasicType type)
 {
@@ -64,10 +58,10 @@ Loopr_alloc_value(Loopr_BasicType type)
 	Loopr_Value *ret;
 
 	ret = MEM_malloc(sizeof(Loopr_Value));
-	ret->table = Loopr_alloc_info_table(type);
-	MEM_fill(ret->u, NULL_VALUE);
+	ret->type = type;
+	ret->u.double_value = NULL_VALUE;
 
-	ret->marked = LPR_False;
+	ret->marked = 0;
 	ret->prev = NULL;
 	ret->next = NULL;
 	Walle_add_object(ret);
@@ -93,17 +87,11 @@ Loopr_create_string(Loopr_Byte *data, int *offset)
 }
 
 Loopr_Value *
-Loopr_create_null()
-{
-	return NULL;
-}
-
-Loopr_Value *
 Loopr_create_object(Loopr_Value *orig)
 {
 	Loopr_Value *ret;
 
-	if (orig && orig->table->type == LPR_OBJECT) {
+	if (orig && orig->type == LPR_OBJECT) {
 		return orig;
 	}
 
@@ -116,7 +104,7 @@ Loopr_create_object(Loopr_Value *orig)
 Loopr_Value *
 Loopr_get_init_value(Loopr_BasicType type)
 {
-	Loopr_Value *value;
+	/*Loopr_Value *value;
 
 	switch (type) {
 		case LPR_BOOLEAN:
@@ -140,7 +128,7 @@ Loopr_get_init_value(Loopr_BasicType type)
 		default:
 			value = Loopr_create_null();
 			break;
-	}
+	}*/
 
-	return value;
+	return Loopr_create_null();
 }

@@ -22,18 +22,24 @@ CALL_BACK: //call back address
 //get result
 popb
 
-.function "TRIMUL",3 {
-	ldarg.1
-	ldarg.2
-	ldarg.3
+.function "TRIMUL", first, second, third {
+	.def var
+	ldloc first
+	ldloc second
+	ldloc third
 	mulb
 	mulb
+
+	ldstr "this is a bomb!"
+	stloc var
+	ldloc var
+	popstr
 
 	ret
 }
 
-.function "BoolToString",1 {
-	ldarg.1
+.function "BoolToString", bvalue {
+	ldloc bvalue
 	br.true {
 		ldstr "true"
 		ret
@@ -42,9 +48,10 @@ popb
 	ret
 }
 
-.function "Printk", 1 {
-	ldarg.1
+.function "Printk", str {
+	ldloc str
 	popstr
+	ldloc str
 	ret
 }
 

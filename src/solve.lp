@@ -1,24 +1,23 @@
-.maxstack 100
-.function "Recursive", 2 {
-	ldarg.1
+.function "Recursive", n, m {
+	ldloc n
 	br.1 {
-		ldarg.2
+		ldloc m
 		ret
 	}
 
-	ldarg.2
+	ldloc m
 	br.1 {
-		ldarg.1
+		ldloc n
 		ret
 	}
 
-	ldarg.1
+	ldloc n
 	dec
-	ldarg.2
+	ldloc m
 	call "Recursive", 2
 
-	ldarg.1
-	ldarg.2
+	ldloc n
+	ldloc m
 	dec
 	call "Recursive", 2
 
@@ -30,15 +29,3 @@ ldb 10
 ldb 10
 call "Recursive", 2
 popb
-/*.function "test", 2 {
-	ldarg.1
-	popb
-
-	ldarg.2
-	popb
-	ret
-}
-
-ldb 123
-ldb 234
-call "test", 2*/

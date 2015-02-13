@@ -16,7 +16,6 @@ typedef enum {
 	LPR_LD_STRING,
 	LPR_LD_LOC,
 
-	LPR_INIT_LOC,
 	LPR_CONVERT, /* MLES */
 	LPR_BOXING,
 	LPR_UNBOXING,
@@ -54,6 +53,7 @@ typedef enum {
 	LCR_ENTRANCE = 1,
 	LCR_MAX_STACK,
 	LCR_FUNCTION,
+	LCR_DEFINE,
 	LCR_CODE_PLUS_1
 } LooprCodeCompilerReference;
 
@@ -117,7 +117,7 @@ typedef struct Loopr_InfoTable_tag {
 typedef struct Loopr_Value_tag {
 	Loopr_Int32 marked;
 
-	Loopr_InfoTable *table;
+	Loopr_BasicType type;
 	union {
 		Loopr_Boolean 			boolean_value;
 		Loopr_Char				char_value;
@@ -144,16 +144,20 @@ typedef struct Loopr_Value_tag {
 	struct Loopr_Value_tag *next;
 } Loopr_Value;
 
+typedef struct ExeContainer_tag {
+	Loopr_Int32 entrance;
+	Loopr_Int32 length;
+	Loopr_Byte *code;
+} ExeContainer;
+
 typedef struct CallInfo_tag {
 	Loopr_Int32 marked;
-	Loopr_InfoTable *filler;
 
-	int code_length;
-	int caller_pc;
-	Loopr_Byte *caller_code;
+	int pc;
+	ExeContainer *caller;
 
-	int stack_pointer;
 	int base;
+	int local;
 } CallInfo;
 
 typedef struct Loopr_Stack_tag {
@@ -164,7 +168,6 @@ typedef struct Loopr_Stack_tag {
 
 typedef struct LocalVariable_tag {
 	char *identifier;
-	Loopr_InfoTable *table;
 	Loopr_Value *value;
 } LocalVariable;
 

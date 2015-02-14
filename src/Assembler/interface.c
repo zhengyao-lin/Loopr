@@ -73,7 +73,13 @@ Asm_clean_local_env(ByteContainer *env)
 void
 Asm_dispose_compiler(Asm_Compiler *compiler)
 {
+	int i;
+
+	for (i = 0; i < compiler->function_count; i++) {
+		MEM_free(compiler->function_definition[i].name);
+	}
 	MEM_free(compiler->function_definition);
+
 	ASM_free(compiler);
 	return;
 }

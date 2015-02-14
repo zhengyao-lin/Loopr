@@ -5,29 +5,29 @@
 #include "UTL.h"
 
 TypeInfo Loopr_Type_Info[] = {
-	{"dummy",	"dummy", 		-1},
-	{"null",	"Null",			0},
+	{"dummy",	"dummy", 		"",			-1},
+	{"null",	"Null",			"",			0},
 
-	{"bl",		"Boolean",		sizeof(Loopr_Boolean)},
-	{"c4",		"Char",			sizeof(Loopr_Char)},
+	{"bl",		"Boolean",		"%d",		sizeof(Loopr_Boolean)},
+	{"c4",		"Char",			"%u",		sizeof(Loopr_Char)},
 
-	{"s8",		"SByte",		sizeof(Loopr_SByte)},
-	{"b8",		"Byte",			sizeof(Loopr_Byte)},
+	{"s8",		"SByte",		"%d",		sizeof(Loopr_SByte)},
+	{"b8",		"Byte",			"%u",		sizeof(Loopr_Byte)},
 
-	{"i16",		"Int16",		sizeof(Loopr_Int16)},
-	{"u16",		"UInt16",		sizeof(Loopr_UInt16)},
+	{"i16",		"Int16",		"%d",		sizeof(Loopr_Int16)},
+	{"u16",		"UInt16",		"%u",		sizeof(Loopr_UInt16)},
 
-	{"i32",		"Int32",		sizeof(Loopr_Int32)},
-	{"u32",		"UInt32",		sizeof(Loopr_UInt32)},
+	{"i32",		"Int32",		"%d",		sizeof(Loopr_Int32)},
+	{"u32",		"UInt32",		"%u",		sizeof(Loopr_UInt32)},
 
-	{"i64",		"Int64",		sizeof(Loopr_Int64)},
-	{"u64",		"UInt64",		sizeof(Loopr_UInt64)},
+	{"i64",		"Int64",		"%ld",		sizeof(Loopr_Int64)},
+	{"u64",		"UInt64",		"%lu",		sizeof(Loopr_UInt64)},
 
-	{"f8",		"Single",		sizeof(Loopr_Single)},
-	{"f16",		"Double",		sizeof(Loopr_Double)},
-	{"str",		"String",		sizeof(Loopr_Char *)},
+	{"f8",		"Single",		"%f",		sizeof(Loopr_Single)},
+	{"f16",		"Double",		"%lf",		sizeof(Loopr_Double)},
+	{"str",		"String",		"%s",		sizeof(Loopr_Char *)},
 
-	{"obj",		"Object",		sizeof(Loopr_Value *)},
+	{"obj",		"Object",		"",			sizeof(Loopr_Value *)},
 };
 
 Loopr_Byte *

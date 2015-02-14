@@ -187,6 +187,9 @@ Gencode_push_type_args(ByteContainer *env, Bytecode *code)
 	return type;
 }
 
+#define CONST_TYPE_MAP(const_type) \
+	(const_type_mapping[(const_type)].basic_type)
+
 static void
 Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 {
@@ -197,13 +200,71 @@ Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 	if (list->bytecode->next) {
 		type = Gencode_push_type_args(env, list->bytecode->next);
 	} else {
-		type = const_type_mapping[list->constant->type].basic_type;
+		type = CONST_TYPE_MAP(list->constant->type);
 		Coding_push_code(env, LPR_NULL_CODE, (Loopr_Byte *)&type, 1);
 	}
 
-	Coding_push_code(env, LPR_NULL_CODE,
-					 (Loopr_Byte *)&list->constant->u.int64_value,
-					 Loopr_Type_Info[type].size);
+	if (type <= LPR_INT64
+		|| type == const_type_mapping[list->constant->type].basic_type) {
+		Coding_push_code(env, LPR_NULL_CODE,
+						 (Loopr_Byte *)&list->constant->u.int64_value,
+						 Loopr_Type_Info[type].size);
+	} else { /* float convert */
+		if (list->constant->type == CONST_SINGLE) { /* single to double */
+			if (list->constant->type == CONST_DOUBLE) {
+				list->constant->u.double_value = (Loopr_Double)list->constant->u.single_value;
+			} else {
+				list->constant->u.double_value = (Loopr_Double)GET_BIT(list->constant->u.int64_value,
+																	   CONST_TYPE_MAP(list->constant->type));
+			}
+
+			Coding_push_code(env, LPR_NULL_CODE,
+						 	(Loopr_Byte *)&list->constant->u.double_value,
+						 	Loopr_Type_Info[type].size);
+		} else { /* double to single */
+			if (list->constant->type == CONST_SINGLE) {
+				list->constant->u.single_value = (Loopr_Single)list->constant->u.double_value;
+			} else {
+				list->constant->u.single_value = (Loopr_Single)GET_BIT(list->constant->u.int64_value,
+																	   CONST_TYPE_MAP(list->constant->type));
+			}
+
+			Coding_push_code(env, LPR_NULL_CODE,
+						 	(Loopr_Byte *)&list->constant->u.single_value,
+						 	Loopr_Type_Info[type].size);
+		}
+	}
+	return;
+}
+
+static void
+Gencode_dispose_bytecode(Bytecode *header)
+{
+	Bytecode *pos;
+	Bytecode *last;
+
+	for (pos = header; pos;
+		last = pos, pos = pos->next, ASM_free(last)) {
+		if (pos->name) {
+			MEM_free(pos->name);
+		}
+	}
+	return;
+}
+
+static void
+Gencode_dispose_constant(Constant *header)
+{
+	Constant *pos;
+	Constant *last;
+
+	for (pos = header; pos;
+		last = pos, pos = pos->next, ASM_free(last)) {
+		if (pos->type == CONST_STRING
+			|| pos->type == CONST_LABEL) {
+			MEM_free(pos->u.string_value);
+		}
+	}
 	return;
 }
 
@@ -216,7 +277,7 @@ Gencode_function(ByteContainer *env, char *name, Constant *arguments)
 	Constant *pos;
 
 	new_func = Coding_init_coding_env();
-	new_func->name = name;
+	new_func->name = NULL;
 	new_func->outer_env = env;
 
 	for (pos = arguments;
@@ -279,37 +340,6 @@ Gencode_get_function_index(ByteContainer *env, char *name)
 }
 
 static void
-Gencode_dispose_bytecode(Bytecode *header)
-{
-	Bytecode *pos;
-	Bytecode *last;
-
-	for (pos = header; pos;
-		last = pos, pos = pos->next, ASM_free(pos)) {
-		if (!pos->has_fixed) {
-			MEM_free(pos->name);
-		}
-	}
-	return;
-}
-
-static void
-Gencode_dispose_constant(Constant *header)
-{
-	Constant *pos;
-	Constant *last;
-
-	for (pos = header; pos;
-		last = pos, pos = pos->next, ASM_free(last)) {
-		if (pos->type == CONST_STRING
-			|| pos->type == CONST_LABEL) {
-			MEM_free(pos->u.string_value);
-		}
-	}
-	return;
-}
-
-static void
 Gencode_compiler_reference(ByteContainer *env, Statement *list)
 {
 	int index;
@@ -332,7 +362,6 @@ Gencode_compiler_reference(ByteContainer *env, Statement *list)
 			break;
 		case LCR_FUNCTION:
 			Gencode_function(env, list->constant->u.string_value, list->constant->next);
-			goto NOT_FREE;
 			break;
 		case LCR_DEFINE:
 			if (list->constant->type != CONST_STRING
@@ -346,10 +375,9 @@ Gencode_compiler_reference(ByteContainer *env, Statement *list)
 															list->bytecode->next->name));
 			break;
 	}
-	Gencode_dispose_constant(list->constant);
 
-NOT_FREE:
-	Gencode_dispose_bytecode(list->bytecode->next);
+	Gencode_dispose_bytecode(list->bytecode);
+	Gencode_dispose_constant(list->constant);
 	ASM_free(list);
 }
 
@@ -361,9 +389,9 @@ Gencode_statement(ByteContainer *env, Statement *list)
 
 	if (list->label) {
 		Label_add(list->label, env->next);
+		Gencode_push_constant_list(env, list->constant);
 		MEM_free(list->label);
-		ASM_free(list);
-		return;
+		goto DISPOSE;
 	}
 
 	if (list->bytecode->name) {
@@ -397,7 +425,7 @@ Gencode_statement(ByteContainer *env, Statement *list)
 							 (Loopr_Byte *)&index,
 							 sizeof(Loopr_Int32));
 			break;
-		case LPR_CALL:
+		case LPR_INVOKE:
 			Coding_push_code(env, code, NULL, 0);
 			index = Gencode_get_function_index(env, list->constant->u.string_value);
 			Coding_push_code(env, LPR_NULL_CODE,
@@ -444,8 +472,10 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			Gencode_push_constant_list(env, list->constant);
 			break;
 	}
-	Gencode_dispose_constant(list->constant);
+
+DISPOSE:
 	Gencode_dispose_bytecode(list->bytecode);
+	Gencode_dispose_constant(list->constant);
 	ASM_free(list);
 
 	return;

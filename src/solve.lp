@@ -1,4 +1,4 @@
-.function "Recursive", n, m {
+.function Recursive(n, m) {
 	ldloc n
 	br.1 {
 		ldloc m
@@ -14,18 +14,18 @@
 	ldloc n
 	dec
 	ldloc m
-	call "Recursive", 2
+	invoke "Recursive", 2
 
 	ldloc n
 	ldloc m
 	dec
-	call "Recursive", 2
+	invoke "Recursive", 2
 
-	addb
+	add
 	ret
 }
 
 ldb 10
 ldb 10
-call "Recursive", 2
+invoke "Recursive", 2
 popb

@@ -43,16 +43,12 @@ typedef enum {
 typedef struct ExeEnvironment_tag {
 	WarningFlag wflag;
 
-	/*Loopr_Int32 entrance;
-	Loopr_Int32 code_length;
-	Loopr_Byte *code;*/
 	ExeContainer *exe;
 	Loopr_Stack stack;
 
-	Loopr_Int32 local_variable_count;
-	LocalVariable *local_variable;
-
-	struct ExeEnvironment_tag *outer_env;
+	/*Loopr_Int32 local_variable_count;
+	LocalVariable *local_variable;*/
+	LocalVariableMap *local_variable_map;
 
 	Loopr_Int32 function_count;
 	struct ExeEnvironment_tag **function;

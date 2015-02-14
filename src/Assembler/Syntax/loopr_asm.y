@@ -20,10 +20,9 @@
 %token <constant>		FLOAT_LITERAL
 %token <constant>		STRING_LITERAL
 
-%type <identifier> label
 %type <bytecode> dot_bytecode compiler_ref
-%type <constant> constant constant_list constant_list_opt
-%type <statement> statement
+%type <constant> constant constant_list constant_list_opt block
+%type <statement> statement label_statement
 %type <statement_list> statement_list
 %%
 /*************** Frame ***************/
@@ -79,6 +78,14 @@ compiler_ref
 		ASM_free($2);
 	}
 	;
+block
+	: LB next_line_list_opt
+	  statement_list
+	  next_line_list_opt RB
+	{
+		$$ = Asm_create_block($3);
+	}
+	;
 constant
 	: CHAR_LITERAL
 	| DIGIT_LITERAL
@@ -90,10 +97,7 @@ constant
 		constant->u.string_value = $1;
 		$$ = constant;
 	}
-	| LB next_line_list_opt statement_list next_line_list_opt RB
-	{
-		$$ = Asm_create_block($3);
-	}
+	| block
 	;
 constant_list
 	: constant
@@ -104,6 +108,11 @@ constant_list
 	| constant_list constant
 	{
 		$$ = Asm_chain_constant($1, $2);
+	}
+	| constant_list LP constant_list_opt RP
+	{
+		$1->next = $3;
+		$$ = $1;
 	}
 	;
 constant_list_opt
@@ -121,17 +130,18 @@ next_line_list_opt
 	: /* NULL */
 	| next_line_list
 	;
-label
+label_statement
 	: IDENTIFIER COLON next_line_list_opt
-	{
-		$$ = $1;
-	}
-	;
-statement
-	: label
 	{
 		$$ = Asm_create_statement($1, NULL, NULL);
 	}
+	| IDENTIFIER COLON next_line_list_opt block
+	{
+		$$ = Asm_create_statement($1, NULL, $4);
+	}
+	;
+statement
+	: label_statement
 	| dot_bytecode constant_list_opt NEXT_LINE
 	{
 		$$ = Asm_create_statement(NULL, $1, $2);

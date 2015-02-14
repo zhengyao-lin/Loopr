@@ -3,9 +3,9 @@
 
 goto __TRIMUL_END //jump throw function
 __TRIMUL: //Macro, multiply the last three stacks
-	mulb
-	mulb
-	goto CALL_BACK
+	mul
+	mul
+	goto invoke_BACK
 __TRIMUL_END:
 
 //Prototype for function
@@ -15,20 +15,20 @@ ldb 16384l
 ldb 16384l
 ldb 16384l
 
-//call function
+//invoke function
 goto __TRIMUL
-CALL_BACK: //call back address
+invoke_BACK: //invoke back address
 
 //get result
 popb
 
-.function "TRIMUL", first, second, third {
+.function TRIMUL(first, second, third){
 	.def var
 	ldloc first
 	ldloc second
 	ldloc third
-	mulb
-	mulb
+	mul
+	mul
 
 	ldstr "this is a bomb!"
 	stloc var
@@ -38,7 +38,7 @@ popb
 	ret
 }
 
-.function "BoolToString", bvalue {
+.function BoolToString(bvalue) {
 	ldloc bvalue
 	br.true {
 		ldstr "true"
@@ -48,7 +48,7 @@ popb
 	ret
 }
 
-.function "Printk", str {
+.function Printk(str) {
 	ldloc str
 	popstr
 	ldloc str
@@ -61,16 +61,24 @@ ldb '\033'
 popb
 
 ldb true
-call "BoolToString", 1
+invoke "BoolToString", 1
 popstr
 
 ldb 5
 ldb 6
 ldb 7
-call TRIMUL, 3
+invoke TRIMUL, 3
 popb
-//goto LOOP1
+
+HI: {
+	ldstr "hi"
+	popstr
+}
 
 ldstr "printstr"
-call Printk, 1
+invoke Printk, 1
 popstr
+
+ldstr "260.0"
+conv.b8
+popb

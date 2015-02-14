@@ -168,9 +168,10 @@ Walle_dispose_environment(ExeEnvironment *env)
 	if (env->stack.value) {
 		MEM_free(env->stack.value);
 	}
-	if (env->local_variable) {
-		MEM_free(env->local_variable);
+	if (env->local_variable_map->variable) {
+		MEM_free(env->local_variable_map->variable);
 	}
+	MEM_free(env->local_variable_map);
 
 	for (i = 0; i < env->function_count; i++) {
 		Walle_dispose_environment(env->function[i]);

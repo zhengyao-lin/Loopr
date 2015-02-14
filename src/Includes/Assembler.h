@@ -103,6 +103,10 @@ typedef struct LabelContainer_tag {
 	struct LabelContainer_tag *next;
 } LabelContainer;
 
+#define GET_BIT(num, type) \
+	((num) << (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8 \
+		   >> (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8)
+
 /* label.c */
 void Label_init(ByteContainer *env);
 LabelContainer *Label_alloc(char *identifier);

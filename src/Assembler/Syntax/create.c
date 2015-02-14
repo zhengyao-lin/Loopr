@@ -82,7 +82,7 @@ Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 		&& !strcmp(code->next->name, Loopr_CR_Info[LCR_FUNCTION].assembly_name)) {
 		compiler->function_definition = MEM_realloc(compiler->function_definition,
 													sizeof(FunctionDefinition) * (compiler->function_count + 1));
-		compiler->function_definition[compiler->function_count].name = const_opt->u.string_value;
+		compiler->function_definition[compiler->function_count].name = MEM_strdup(const_opt->u.string_value);
 		compiler->function_count++;
 	}
 

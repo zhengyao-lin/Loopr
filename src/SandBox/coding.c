@@ -25,17 +25,16 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"br",		1,	-1},
 	{"dup",		1,	1},
 
-	{"addb",	2,	-1},
+	{"add",		2,	-1},
 	{"addf",	2,	-1},
 	{"addstr",	2,	-1},
-	{"subb",	2,	-1},
-	{"mulb",	2,	-1},
-	{"divb",	2,	-1},
+	{"sub",		2,	-1},
+	{"mul",		2,	-1},
+	{"div",		2,	-1},
 	{"inc",		1,	0},
 	{"dec",		1,	0},
 
-	{"call",	0,	1},
-	{"ldarg",	0,	1},
+	{"invoke",	0,	1},
 
 	{"goto",	0,	0},
 	{"ret",		0,	0},
@@ -175,10 +174,10 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->stack.alloc_size = env->stack_size + 2; /* the last added two is for callinfo and overflow check */
 	ret->stack.stack_pointer = -1;
 	ret->stack.value = NULL;
-	ret->local_variable_count = env->local_variable_count;
-	ret->local_variable = NULL;
-
-	ret->outer_env = NULL;
+	ret->local_variable_map = MEM_malloc(sizeof(LocalVariableMap));
+	ret->local_variable_map->count = env->local_variable_count;
+	ret->local_variable_map->variable = NULL;
+	ret->local_variable_map->prev = NULL;
 
 	ret->function_count = env->function_count;
 	ret->function = NULL;
@@ -186,7 +185,6 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 		ret->function = MEM_malloc(sizeof(ExeEnvironment *) * ret->function_count);
 		for (i = 0; i < env->function_count; i++) {
 			ret->function[i] = Coding_init_exe_env(env->function[i], wflag);
-			ret->function[i]->outer_env = ret;
 		}
 	}
 

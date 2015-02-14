@@ -18,14 +18,14 @@ ldloc "integer1"
 popstr
 ldb.i32 22
 ldb.i32 2222
-mulb
+mul
 popb
 
 ldb.b8 240
 ldb.i32 240
-mulb
+mul
 ldb.s8 5
-divb
+div
 popb
 
 //ldb.i32 '\x76';
@@ -54,10 +54,10 @@ ldb.i32 500
 ldb.i32 200
 ldb.i32 100
 
-addb
-subb
-mulb
-divb
+add
+sub
+mul
+div
 popb
 
 ldb #-12

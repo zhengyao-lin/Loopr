@@ -16,7 +16,7 @@ typedef enum {
 	LPR_LD_STRING,
 	LPR_LD_LOC,
 
-	LPR_CONVERT, /* MLES */
+	LPR_CONVERT,
 	LPR_BOXING,
 	LPR_UNBOXING,
 
@@ -39,8 +39,7 @@ typedef enum {
 	LPR_INC,
 	LPR_DEC,
 
-	LPR_CALL,
-	LPR_LOAD_ARG,
+	LPR_INVOKE,
 
 	LPR_GOTO,
 	LPR_RETURN,
@@ -62,12 +61,12 @@ typedef enum {
     LPR_True = 1
 } Loopr_Boolean;
 
-typedef wchar_t			Loopr_Char;
+typedef wchar_t		Loopr_Char;
 
 typedef int8_t		 	Loopr_SByte;
-typedef int16_t		 	Loopr_Int16;
+typedef int16_t		Loopr_Int16;
 typedef int32_t 		Loopr_Int32;
-typedef int64_t	 		Loopr_Int64;
+typedef int64_t	 	Loopr_Int64;
 
 typedef uint8_t 		Loopr_Byte;
 typedef uint16_t		Loopr_UInt16;
@@ -150,16 +149,6 @@ typedef struct ExeContainer_tag {
 	Loopr_Byte *code;
 } ExeContainer;
 
-typedef struct CallInfo_tag {
-	Loopr_Int32 marked;
-
-	int pc;
-	ExeContainer *caller;
-
-	int base;
-	int local;
-} CallInfo;
-
 typedef struct Loopr_Stack_tag {
 	Loopr_Int32 alloc_size;
 	Loopr_Int32 stack_pointer;
@@ -170,6 +159,22 @@ typedef struct LocalVariable_tag {
 	char *identifier;
 	Loopr_Value *value;
 } LocalVariable;
+
+typedef struct LocalVariableMap_tag {
+	Loopr_Int32 count;
+	LocalVariable *variable;
+	struct LocalVariableMap_tag *prev;
+} LocalVariableMap;
+
+typedef struct CallInfo_tag {
+	Loopr_Int32 marked;
+
+	int pc;
+	ExeContainer *caller;
+
+	int base;
+	LocalVariableMap *local_list;
+} CallInfo;
 
 typedef struct ByteContainer_tag {
 	char *name;
@@ -201,5 +206,6 @@ typedef struct ByteInfo_tag {
 typedef struct TypeInfo_tag {
 	char *short_name;
 	char *assembly_name;
+	char *scan_controller;
 	Loopr_Int32 size;		
 } TypeInfo;

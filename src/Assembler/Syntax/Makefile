@@ -28,5 +28,5 @@ lex.yy.o: lex.yy.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Include
 .c.o:
 	$(CC) $(CFLAGS) $*.c $(INCLUDES)
 
-create.o: create.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h 
+create.o: create.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/DBG.h ../../Includes/LBS.h 
 string.o: string.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h ../../Includes/UTL.h

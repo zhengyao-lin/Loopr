@@ -269,9 +269,10 @@ Gencode_dispose_constant(Constant *header)
 }
 
 static void
-Gencode_function(ByteContainer *env, char *name, Constant *arguments)
+Gencode_function(ByteContainer *env, Constant *arguments)
 {
 	int i;
+	char *name;
 	ByteContainer *new_func;
 	StatementList *block;
 	Constant *pos;
@@ -280,24 +281,41 @@ Gencode_function(ByteContainer *env, char *name, Constant *arguments)
 	new_func->name = NULL;
 	new_func->outer_env = env;
 
+	if (arguments->type == CONST_KEYWORD) {
+		switch (arguments->u.keyword_value) {
+			case ASM_VOID:
+				new_func->is_void = LPR_True;
+				arguments = arguments->next;
+				break;
+			default:
+				DBG_panic(("line %d: Unknown keyword %d\n", arguments->line_number, arguments->u.keyword_value));
+				break;
+		}
+	}
+
+	if (!(arguments->type == CONST_STRING || arguments->type == CONST_LABEL)) {
+		DBG_panic(("line %d: Nameless function\n", arguments->line_number));
+	} else {
+		name = arguments->u.string_value;
+	}
+
+	arguments = arguments->next;
 	for (pos = arguments;
 		 pos && (pos->type == CONST_STRING || pos->type == CONST_LABEL);
 		 pos = pos->next) {
 		Coding_init_local_variable(new_func, pos->u.string_value);
 	}
 
-	if (!pos) {
-		DBG_panic(("Incorrect function definition\n"));
-		return;
+	if (!pos) { /* function signed */
+		if (!(new_func->native_function = Native_search_function_by_name(name))) {
+			DBG_panic(("Failed to find native function by name \"%s\"\n", name));
+		}
 	} else if (pos->type == CONST_BLOCK) {
 		block = pos->u.block;
-	} else {
-		DBG_panic(("Function definition without block\n"));
-		return;
+		Gencode_statement_list(new_func, pos->u.block);
+		Coding_push_code(new_func, LPR_RETURN, NULL, 0);
 	}
 
-	Gencode_statement_list(new_func, block);
-	Coding_push_code(new_func, LPR_RETURN, NULL, 0);
 	Asm_clean_local_env(new_func);
 
 	env->function = MEM_realloc(env->function, sizeof(ByteContainer *) * (env->function_count + 1));
@@ -361,7 +379,7 @@ Gencode_compiler_reference(ByteContainer *env, Statement *list)
 			}
 			break;
 		case LCR_FUNCTION:
-			Gencode_function(env, list->constant->u.string_value, list->constant->next);
+			Gencode_function(env, list->constant);
 			break;
 		case LCR_DEFINE:
 			if (list->constant->type != CONST_STRING
@@ -386,7 +404,9 @@ Gencode_statement(ByteContainer *env, Statement *list)
 {
 	int index;
 	Loopr_Byte code;
+	Asm_Compiler *compiler;
 
+	compiler = Asm_get_current_compiler();
 	if (list->label) {
 		Label_add(list->label, env->next);
 		Gencode_push_constant_list(env, list->constant);
@@ -434,6 +454,9 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			Coding_push_code(env, LPR_NULL_CODE,
 							 (Loopr_Byte *)&list->constant->next->u.int32_value,
 							 sizeof(Loopr_Int32));
+			if (compiler->function_definition[index].is_void) {
+				Coding_push_code(env, LPR_POP, NULL, 0);
+			}
 			break;
 		case LPR_BRANCH:
 			Coding_push_code(env, code, NULL, 0);
@@ -501,6 +524,7 @@ Gencode_compile(Asm_Compiler *compiler)
 {
 	ByteContainer *container;
 
+	Asm_set_current_compiler(compiler);
 	container = Coding_init_coding_env();
 	Gencode_statement_list(container, compiler->top_level);
 	Asm_clean_local_env(container);

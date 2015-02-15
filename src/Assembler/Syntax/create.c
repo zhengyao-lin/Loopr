@@ -1,6 +1,7 @@
 #include <string.h>
 #include "LBS.h"
 #include "MEM.h"
+#include "DBG.h"
 #include "Assembler.h"
 
 extern ByteInfo Loopr_CR_Info[];
@@ -80,8 +81,25 @@ Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 
 	if (code && code->name == NULL && code->next
 		&& !strcmp(code->next->name, Loopr_CR_Info[LCR_FUNCTION].assembly_name)) {
-		compiler->function_definition = MEM_realloc(compiler->function_definition,
-													sizeof(FunctionDefinition) * (compiler->function_count + 1));
+		if (compiler->function_definition) {
+			compiler->function_definition = MEM_realloc(compiler->function_definition,
+														sizeof(FunctionDefinition) * (compiler->function_count + 1));
+		} else {
+			compiler->function_definition = MEM_malloc(sizeof(FunctionDefinition) * (compiler->function_count + 1));
+		}
+
+		compiler->function_definition[compiler->function_count].is_void = LPR_False;
+		while (const_opt && const_opt->type == CONST_KEYWORD) {
+			switch (const_opt->u.keyword_value) {
+				case ASM_VOID:
+					compiler->function_definition[compiler->function_count].is_void = LPR_True;
+					const_opt = const_opt->next;
+					break;
+				default:
+					DBG_panic(("line %d: Unknown keyword %d\n", const_opt->line_number, const_opt->u.keyword_value));
+					break;
+			}
+		}
 		compiler->function_definition[compiler->function_count].name = MEM_strdup(const_opt->u.string_value);
 		compiler->function_count++;
 	}
@@ -96,6 +114,7 @@ Asm_create_statement_list(Statement *st)
 
 	ret = ASM_malloc(sizeof(StatementList));
 	ret->statement = st;
+	ret->next = NULL;
 
 	return ret;
 }

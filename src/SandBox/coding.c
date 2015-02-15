@@ -56,6 +56,7 @@ Coding_init_coding_env(void)
 
 	env = MEM_malloc(sizeof(ByteContainer));
 	env->name = NULL;
+	env->is_void = LPR_False;
 	env->next = 0;
 	env->alloc_size = 0;
 	env->hinted = LPR_False;
@@ -68,6 +69,8 @@ Coding_init_coding_env(void)
 
 	env->function_count = 0;
 	env->function = NULL;
+
+	env->native_function = NULL;
 
 	env->outer_env = NULL;
 
@@ -179,6 +182,7 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->local_variable_map->variable = NULL;
 	ret->local_variable_map->prev = NULL;
 
+	ret->native_function = env->native_function;
 	ret->function_count = env->function_count;
 	ret->function = NULL;
 	if (env->function_count > 0) {

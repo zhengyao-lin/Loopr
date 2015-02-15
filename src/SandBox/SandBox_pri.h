@@ -34,26 +34,6 @@
 #define MEM_fill(obj, i) \
 	(memset(&(obj), (i), sizeof((obj))))
 
-typedef enum {
-	LPR_NOTHING = 1,
-	LPR_JUST_PANIC,
-	LPR_ANYTHING
-} WarningFlag;
-
-typedef struct ExeEnvironment_tag {
-	WarningFlag wflag;
-
-	ExeContainer *exe;
-	Loopr_Stack stack;
-
-	/*Loopr_Int32 local_variable_count;
-	LocalVariable *local_variable;*/
-	LocalVariableMap *local_variable_map;
-
-	Loopr_Int32 function_count;
-	struct ExeEnvironment_tag **function;
-} ExeEnvironment;
-
 /* execute.c */
 Loopr_Value *Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level);
 
@@ -79,8 +59,8 @@ void Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int
 ExeContainer *Coding_alloc_exe_container(ByteContainer *env);
 ExeEnvironment *Coding_init_exe_env(ByteContainer *env, WarningFlag wflag);
 
-typedef void (*Walle_Marker)(void);
 /* wall-e.c */
+typedef void (*Walle_Marker)(void);
 void Walle_update_alive_period();
 int Walle_get_alive_period();
 void Walle_set_header(Loopr_Value *v);
@@ -99,6 +79,12 @@ void Walle_check_mem();
 
 void Walle_dispose_environment(ExeEnvironment *env);
 void Walle_dispose_byte_container(ByteContainer *env, Loopr_Boolean flag_clean_code);
+
+/* native.c */
+NativeFunction *Native_search_function_by_name(char *name);
+Loopr_NativeCallee Native_search_callee_by_magic(Loopr_Int64 magic);
+int Native_load_function(char *name, Loopr_Int64 magic, Loopr_NativeCallee *callee);
+void Native_dispose_all();
 
 extern ByteInfo Loopr_Byte_Info[];
 extern TypeInfo Loopr_Type_Info[];

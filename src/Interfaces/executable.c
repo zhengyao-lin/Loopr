@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "LBS.h"
 #include "MEM.h"
+#include "DBG.h"
 
 /* ISerialize */
 
@@ -54,6 +55,63 @@ ISerialize_read_byte_container(FILE *fp)
 		ISerialize_read_bytecode(fp, tmp->code, tmp->alloc_size);
 
 		ret->function[i] = tmp;
+	}
+
+	return ret;
+}
+
+void
+ISerialize_save_exe_environment(FILE *fp, ExeEnvironment *src)
+{
+	int i;
+
+	fwrite(src,						sizeof(ExeEnvironment), 	1,	fp);
+	fwrite(src->local_variable_map,	sizeof(LocalVariableMap), 	1,	fp);
+	fwrite(src->exe,				sizeof(ExeContainer), 		1,	fp);
+	if (src->native_function) {
+		fwrite(src->native_function, sizeof(NativeFunction), 1, fp);
+	}
+
+	ISerialize_save_bytecode(fp, src->exe->code, src->exe->length);
+
+	for (i = 0; i < src->function_count; i++) {
+		ISerialize_save_exe_environment(fp, src->function[i]);
+	}
+
+	return;
+}
+
+ExeEnvironment *
+ISerialize_read_exe_environment(FILE *fp)
+{
+	int i;
+	ExeEnvironment *ret;
+
+	ret = MEM_malloc(sizeof(ExeEnvironment));
+	fread(ret, sizeof(ExeEnvironment), 1, fp);
+
+	ret->local_variable_map = MEM_malloc(sizeof(LocalVariableMap));
+	fread(ret->local_variable_map, sizeof(LocalVariableMap), 1, fp);
+
+	ret->exe = MEM_malloc(sizeof(ExeContainer));
+	fread(ret->exe, sizeof(ExeContainer), 1, fp);
+
+	ret->exe->code = MEM_malloc(sizeof(Loopr_Byte) * ret->exe->length);
+	ISerialize_read_bytecode(fp, ret->exe->code, ret->exe->length);
+
+	if (ret->native_function) {
+		ret->native_function = MEM_malloc(sizeof(NativeFunction));
+		fread(ret->native_function, sizeof(NativeFunction), 1, fp);
+		ret->native_function->callee = Native_search_callee_by_magic(ret->native_function->magic);
+
+		if (!ret->native_function->callee) {
+			DBG_panic(("Failed to deserialize: no native function match the magic number 0x%x\n", ret->native_function->magic));
+		}
+	}
+
+	ret->function = MEM_malloc(sizeof(ExeEnvironment) * ret->function_count);
+	for (i = 0; i < ret->function_count; i++) {
+		ret->function[i] = ISerialize_read_exe_environment(fp);
 	}
 
 	return ret;

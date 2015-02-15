@@ -123,6 +123,13 @@ Loopr_Boolean st_character_literal_state;
 %start C_COMMENT CC_COMMENT STRING_LITERAL_STATE
 %%
  /* Punctuations */
+<INITIAL>"void" {
+	Constant *constant;
+	constant = Asm_alloc_constant(CONST_KEYWORD);
+	constant->u.keyword_value = ASM_VOID;
+	yylval.constant = constant;
+	return KEYWORD_LITERAL;
+}
 <INITIAL>"true" {
 	Constant *constant;
 	constant = Asm_alloc_constant(CONST_BYTE);

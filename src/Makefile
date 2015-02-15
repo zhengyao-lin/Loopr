@@ -7,7 +7,8 @@ OBJS = \
 	Memory/mem.o \
 	Debug/dbg.o \
 	Utils/utl.o \
-	Interfaces/Interfaces.o
+	Interfaces/Interfaces.o \
+	Natives/Natives.o
 INCLUDES = \
 	-IIncludes \
 	-ISandBox
@@ -31,6 +32,7 @@ clean:
 	cd Utils; $(MAKE) clean;
 	cd Assembler; $(MAKE) clean;
 	cd Interfaces; $(MAKE) clean;
+	cd Natives; $(MAKE) clean;
 	-rm -f *.o *.lexe $(TARGET) $(TARGET_SANDBOX) $(TARGET_COMPILER) *~
 
 Memory/mem.o:
@@ -45,7 +47,9 @@ Assembler/Assembler.o:
 	cd Assembler; $(MAKE);
 Interfaces/Interfaces.o:
 	cd Interfaces; $(MAKE);
+Natives/Natives.o:
+	cd Natives; $(MAKE);
 
 Main/interpreter_main.o: Main/interpreter_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Assembler.h
-Main/sandbox_main.o: Main/sandbox_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Interfaces.h
+Main/sandbox_main.o: Main/sandbox_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Interfaces.h Includes/Versions.h
 Main/compiler_main.o: Main/compiler_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Assembler.h

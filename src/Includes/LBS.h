@@ -61,6 +61,7 @@ typedef enum {
     LPR_True = 1
 } Loopr_Boolean;
 
+typedef size_t			Loopr_Size;
 typedef wchar_t		Loopr_Char;
 
 typedef int8_t		 	Loopr_SByte;
@@ -144,14 +145,14 @@ typedef struct Loopr_Value_tag {
 } Loopr_Value;
 
 typedef struct ExeContainer_tag {
-	Loopr_Int32 entrance;
-	Loopr_Int32 length;
+	Loopr_Size entrance;
+	Loopr_Size length;
 	Loopr_Byte *code;
 } ExeContainer;
 
 typedef struct Loopr_Stack_tag {
-	Loopr_Int32 alloc_size;
-	Loopr_Int32 stack_pointer;
+	Loopr_Size alloc_size;
+	Loopr_Size stack_pointer;
 	Loopr_Value **value;
 } Loopr_Stack;
 
@@ -161,51 +162,83 @@ typedef struct LocalVariable_tag {
 } LocalVariable;
 
 typedef struct LocalVariableMap_tag {
-	Loopr_Int32 count;
+	Loopr_Size count;
 	LocalVariable *variable;
 	struct LocalVariableMap_tag *prev;
 } LocalVariableMap;
 
 typedef struct CallInfo_tag {
 	Loopr_Int32 marked;
+	Loopr_BasicType filler;
 
-	int pc;
+	Loopr_Size pc;
 	ExeContainer *caller;
 
-	int base;
+	Loopr_Size base;
 	LocalVariableMap *local_list;
 } CallInfo;
 
 typedef struct ByteContainer_tag {
 	char *name;
+	Loopr_Boolean is_void;
 
-	Loopr_Int32 next;
-	Loopr_Int32 alloc_size;
+	Loopr_Size next;
+	Loopr_Size alloc_size;
 
 	Loopr_Boolean hinted:1;
-	Loopr_Int32 stack_size;
+	Loopr_Size stack_size;
 
-	Loopr_Int32 entrance;
+	Loopr_Size entrance;
 	Loopr_Byte *code;
 
-	Loopr_Int32 local_variable_count;
+	Loopr_Size local_variable_count;
 	LocalVariable *local_variable;
 
-	Loopr_Int32 function_count;
+	Loopr_Size function_count;
 	struct ByteContainer_tag **function;
+
+	struct NativeFunction_tag *native_function;
 
 	struct ByteContainer_tag *outer_env;
 } ByteContainer;
 
 typedef struct ByteInfo_tag {
 	char *assembly_name;
-	Loopr_Int32 need_stack;
-	Loopr_Int32 stack_regulator;		
+	Loopr_Size need_stack;
+	Loopr_Size stack_regulator;		
 } ByteInfo;
 
 typedef struct TypeInfo_tag {
 	char *short_name;
 	char *assembly_name;
 	char *scan_controller;
-	Loopr_Int32 size;		
+	Loopr_Size size;		
 } TypeInfo;
+
+typedef enum {
+	LPR_NOTHING = 1,
+	LPR_JUST_PANIC,
+	LPR_ANYTHING
+} WarningFlag;
+
+typedef struct ExeEnvironment_tag {
+	WarningFlag wflag;
+
+	ExeContainer *exe;
+	Loopr_Stack stack;
+
+	LocalVariableMap *local_variable_map;
+
+	struct NativeFunction_tag *native_function;
+
+	Loopr_Size function_count;
+	struct ExeEnvironment_tag **function;
+} ExeEnvironment;
+
+typedef Loopr_Value * (*Loopr_NativeCallee)(ExeEnvironment *env, int argc, Loopr_Value **argv);
+
+typedef struct NativeFunction_tag {
+	char *name;
+	Loopr_Int64 magic;
+	Loopr_NativeCallee callee;
+} NativeFunction;

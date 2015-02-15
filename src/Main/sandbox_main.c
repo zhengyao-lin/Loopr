@@ -7,11 +7,13 @@
 #include "UTL.h"
 #include "DBG.h"
 #include "Interfaces.h"
+#include "Versions.h"
+
+Natives_load_all();
 
 int main(int argc, char **argv)
 {
 	FILE *fp = NULL;
-	ByteContainer *container;
 	ExeEnvironment *env;
 
 	setlocale(LC_ALL, "");
@@ -23,23 +25,22 @@ int main(int argc, char **argv)
 			DBG_panic(("Cannot open file %s\n", argv[1]));
 		}
 	} else {
-		fprintf(stdout, "Loopr SandBox [test version]\n"
+		fprintf(stdout, "Loopr SandBox [ " VERSION " ]\n"
 						"Bug report: https://github.com/Ivory-Next/Loopr\n");
 		exit(0);
 	}
 
-	container = ISerialize_read_byte_container(fp);
+	Natives_load_all();
+	env = ISerialize_read_exe_environment(fp);
 	fclose(fp);
-
-	env = Coding_init_exe_env(container, LPR_ANYTHING);
 
 	Loopr_execute(env, LPR_True);
 #endif
 
 Walle_update_alive_period();
 Walle_gcollect();
+Native_dispose_all();
 Walle_dispose_environment(env);
-Walle_dispose_byte_container(container, LPR_False);
 MEM_dump_blocks(stderr);
 
 	return 0;

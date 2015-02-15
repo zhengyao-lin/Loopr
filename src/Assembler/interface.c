@@ -27,6 +27,8 @@ Asm_init_compiler()
 	ret = ASM_malloc(sizeof(Asm_Compiler));
 	ret->top_level = NULL;
 	ret->current_line_number = 0;
+	ret->function_count = 0;
+	ret->function_definition = NULL;
 
 	return ret;
 }

@@ -22,7 +22,25 @@ invoke_BACK: //invoke back address
 //get result
 popb
 
-.function TRIMUL(first, second, third){
+.function void hello()
+.function void print(str)
+.function getc()
+.function void println(str) {
+	ldstr "\n"
+	ldloc str
+	invoke print, 1
+	invoke print, 1
+	ret
+}
+
+ldstr "你好"
+invoke println, 1
+ldstr "issue a character: "
+invoke print, 1
+//invoke getc, 0
+//popb
+
+.function TRIMUL(first, second, third) {
 	.def var
 	ldloc first
 	ldloc second
@@ -56,6 +74,8 @@ popb
 }
 
 LOOP1:
+
+invoke "hello",0
 
 ldb '\033'
 popb

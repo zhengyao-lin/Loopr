@@ -12,6 +12,7 @@
 
 ByteContainer *Gencode_compile(Asm_Compiler *compiler);
 int yylex_destroy();
+Natives_load_all();
 
 int main(int argc, char **argv)
 {
@@ -38,14 +39,16 @@ int main(int argc, char **argv)
 		src = stdin;
 	}
 
+	Natives_load_all();
 	container = Gencode_compile(Asm_compile_file(src));
-	ISerialize_save_byte_container(dest, container);
+	ISerialize_save_exe_environment(dest, Coding_init_exe_env(container, LPR_ANYTHING));
 	fclose(src);
 	fclose(dest);
 	yylex_destroy();
 	Asm_dispose_current_compiler();
 
 #endif
+Native_dispose_all();
 Walle_dispose_byte_container(container, LPR_True);
 MEM_dump_blocks(stderr);
 

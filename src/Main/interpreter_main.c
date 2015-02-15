@@ -10,6 +10,7 @@
 
 ByteContainer *Gencode_compile(Asm_Compiler *compiler);
 int yylex_destroy();
+Natives_load_all();
 
 int main(int argc, char **argv)
 {
@@ -29,6 +30,7 @@ int main(int argc, char **argv)
 		fp = stdin;
 	}
 
+	Natives_load_all();
 	container = Gencode_compile(Asm_compile_file(fp));
 	fclose(fp);
 	yylex_destroy();
@@ -41,6 +43,7 @@ int main(int argc, char **argv)
 Walle_update_alive_period();
 Walle_gcollect();
 Walle_dispose_environment(env);
+Native_dispose_all();
 Walle_dispose_byte_container(container, LPR_False);
 MEM_dump_blocks(stderr);
 

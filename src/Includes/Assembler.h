@@ -31,14 +31,23 @@ typedef enum {
 	CONST_LABEL,
 
 	CONST_BLOCK,
+	CONST_KEYWORD,
 
 	CONST_TYPE_PLUS_1
 } ConstantType;
+
+typedef enum {
+	ASM_VOID = 1,
+
+	ASM_KEYWORD_PLUS_1
+} KeyWord;
 
 typedef struct Constant_tag {
 	ConstantType type;
 	union {
 		char						*string_value;
+
+		KeyWord						keyword_value;
 		Loopr_Char					char_value;
 		Loopr_Byte					byte_value;
 
@@ -83,6 +92,7 @@ typedef struct StatementList_tag {
 
 typedef struct FunctionDefinition_tag {
 	char *name;
+	Loopr_Boolean is_void;
 } FunctionDefinition;
 
 typedef struct Asm_Compiler_tag {
@@ -106,6 +116,9 @@ typedef struct LabelContainer_tag {
 #define GET_BIT(num, type) \
 	((num) << (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8 \
 		   >> (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8)
+
+#define INITIALISE(p) \
+	(memset((p), 0x0, sizeof(p)))
 
 /* label.c */
 void Label_init(ByteContainer *env);

@@ -19,6 +19,7 @@
 %token <constant>		DIGIT_LITERAL
 %token <constant>		FLOAT_LITERAL
 %token <constant>		STRING_LITERAL
+%token <constant>		KEYWORD_LITERAL
 
 %type <bytecode> dot_bytecode compiler_ref
 %type <constant> constant constant_list constant_list_opt block
@@ -88,6 +89,7 @@ block
 	;
 constant
 	: CHAR_LITERAL
+	| KEYWORD_LITERAL
 	| DIGIT_LITERAL
 	| FLOAT_LITERAL
 	| STRING_LITERAL
@@ -111,7 +113,10 @@ constant_list
 	}
 	| constant_list LP constant_list_opt RP
 	{
-		$1->next = $3;
+		Constant *pos;
+		for (pos = $1; pos->next; pos = pos->next);
+		pos->next = $3;
+
 		$$ = $1;
 	}
 	;

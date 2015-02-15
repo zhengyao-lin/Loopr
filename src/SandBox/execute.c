@@ -268,11 +268,23 @@ Private_invoke_function(ExeEnvironment *env, int index, int argc,
 	CallInfo *call_info;
 	ExeEnvironment *callee;
 
-	call_info = malloc(sizeof(CallInfo));
 	outer = Private_get_top_level();
 	callee = outer->function[index];
 
+	if (callee->native_function) {/* is native function */
+		env->stack.stack_pointer -= argc;
+		ret_value = callee->native_function->callee(env, argc,
+													&env->stack.value[env->stack.stack_pointer + 1]);
+		ST(env->stack, 1) = ret_value;
+		env->stack.stack_pointer++;
+		*pc_p += 1 + (sizeof(Loopr_Int32) * 2);
+		return;
+	}
+
 	/* record info */
+	call_info = malloc(sizeof(CallInfo));
+	call_info->marked = 0;
+	call_info->filler = 0;
 	call_info->pc = *pc_p + 1 + (sizeof(Loopr_Int32) * 2);
 	call_info->caller = env->exe;
 
@@ -281,7 +293,7 @@ Private_invoke_function(ExeEnvironment *env, int index, int argc,
 	call_info->local_list = env->local_variable_map;
 
 	/* reset stack */
-	env->stack.stack_pointer = env->stack.stack_pointer - argc + 1;
+	env->stack.stack_pointer -= argc - 1;
 	*base_p = env->stack.stack_pointer;
 
 	/* invoke */
@@ -421,6 +433,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 		/*printf("%s%4d:\t%-15ssp(%d)\n", (!top_level ? LOWER_LEVEL : ""), pc,
 			   Loopr_Byte_Info[env->exe->code[pc]].assembly_name,
 			   env->stack.stack_pointer);*/
+
 #ifdef SENSLTIVE
 		if (env->stack.stack_pointer < (Loopr_Byte_Info[env->exe->code[pc]].need_stack - 1)
 			&& env->wflag != LPR_NOTHING) {
@@ -486,11 +499,13 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_POP_BYTE: {
 				Loopr_BasicType type = ST_TYPE(env->stack, 0);
 				if (is_unsigned(type)) {
-					printf("%s#pop_%s: %lu\n", (!top_level ? LOWER_LEVEL : ""), Loopr_Type_Info[type].assembly_name
-										   , GET_BIT(ST_UINT64(env->stack, 0), type));
+					printf("%s#pop_%s: %lu\n", (!top_level ? LOWER_LEVEL : ""),
+											   Loopr_Type_Info[type].assembly_name,
+											   GET_BIT(ST_UINT64(env->stack, 0), type));
 				} else {
-					printf("%s#pop_%s: %ld\n", (!top_level ? LOWER_LEVEL : ""), Loopr_Type_Info[type].assembly_name
-										   , GET_BIT(ST_INT64(env->stack, 0), type));
+					printf("%s#pop_%s: %ld\n", (!top_level ? LOWER_LEVEL : ""),
+											   Loopr_Type_Info[type].assembly_name,
+											   GET_BIT(ST_INT64(env->stack, 0), type));
 				}
 				env->stack.stack_pointer--;
 				pc++;
@@ -627,5 +642,5 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 	}
 	EXECUTE_END:;
 
-	return (env->stack.stack_pointer >= 0 ? ST(env->stack, 0) : NULL);
+	return NULL;
 }

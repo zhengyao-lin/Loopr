@@ -403,8 +403,10 @@ static void
 Gencode_statement(ByteContainer *env, Statement *list)
 {
 	int index;
+	Loopr_BasicType type;
 	Loopr_Byte code;
 	Asm_Compiler *compiler;
+	Constant *cpos;
 
 	compiler = Asm_get_current_compiler();
 	if (list->label) {
@@ -481,6 +483,30 @@ Gencode_statement(ByteContainer *env, Statement *list)
 					   &env->next, sizeof(Loopr_Int32));
 			} else {
 				Gencode_push_constant_list(env, list->constant);
+			}
+			break;
+		case LPR_NEW_ARRAY:
+			type = LPR_INT32;
+			for (cpos = list->constant, index = 0; cpos; cpos = cpos->next, index++) {
+				Coding_push_code(env, LPR_LD_BYTE, &type, 1);
+				Coding_push_code(env, LPR_NULL_CODE,
+						 		(Loopr_Byte *)&cpos->u.int32_value,
+						 		Loopr_Type_Info[type].size);
+			}
+
+			if (index) {
+				Coding_push_code(env, code, &index, 1);
+			} else {
+				Coding_push_code(env, code, NULL, 0);
+				Gencode_push_type_args(env, list->bytecode->next);
+				Gencode_push_constant_list(env, list->constant);
+			}
+			break;
+		case LPR_LD_ARRAY:
+			for (cpos = list->constant; cpos; cpos = cpos->next) {
+				Coding_push_code(env, code,
+								(Loopr_Byte *)&cpos->u.int32_value,
+								sizeof(Loopr_Int32));
 			}
 			break;
 		case LPR_NULL_CODE:

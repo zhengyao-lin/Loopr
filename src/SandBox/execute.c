@@ -77,26 +77,23 @@
 #define is_unsigned(type) \
 	(type % 2 != 0 ? LPR_True : LPR_False)
 
-static Loopr_Char *
+static Loopr_Value *
 chain_string(Loopr_Value *str1, Loopr_Value *str2)
 {
 	int len;
-	Loopr_Char *ret;
+	Loopr_Value *ret;
 	Loopr_Char *right;
 	Loopr_Char *left;
 
 	right = get_visual_string(str1);
 	left = get_visual_string(str2);
+	ret = Loopr_alloc_value(LPR_STRING);
 
 	len = Loopr_wcslen(right) + Loopr_wcslen(left);
-	ret = MEM_malloc(sizeof(Loopr_Char) * (len + 1));
+	ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (len + 1));
 
-	Loopr_wcscpy(ret, right);
-	Loopr_wcscat(ret, left);
-
-	if (str1 && str1->u.string_value) {
-		MEM_free(str1->u.string_value);
-	}
+	Loopr_wcscpy(ret->u.string_value, right);
+	Loopr_wcscat(ret->u.string_value, left);
 
 	return ret;
 }
@@ -139,9 +136,12 @@ Private_copy_variable(Loopr_Value *src)
 {
 	Loopr_Value *ret = NULL;
 	if (src) {
+		if (Loopr_is_ref_type(src)) {
+			return src;
+		}
 		ret = Loopr_alloc_value(src->type);
 		ret->u = src->u;
-		if (src->type == LPR_STRING) {
+		/*if (src->type == LPR_STRING) {
 			if (src->u.string_value) {
 				ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (Loopr_wcslen(src->u.string_value) + 1));
 				Loopr_wcscpy(ret->u.string_value, src->u.string_value);
@@ -154,7 +154,7 @@ Private_copy_variable(Loopr_Value *src)
 			for (i = 0; i < src->u.array_value.size; i++) {
 				ret->u.array_value.value[i] = Private_copy_variable(src->u.array_value.value[i]);
 			}
-		}
+		}*/
 	}
 
 	return ret;
@@ -538,11 +538,11 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
 				if (arg1 < ST(env->stack, 0)->u.array_value.size) {
-					ST(env->stack, 1) = ST(env->stack, 0)->u.array_value.value[arg1];
+					ST(env->stack, 0) = ST(env->stack, 0)->u.array_value.value[arg1];
 				} else {
 					DBG_panic(("Array range error\n"));
 				}
-				env->stack.stack_pointer++;
+
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
@@ -608,8 +608,12 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_STORE_ARRAY: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				ST(env->stack, -1)->u.array_value.value[arg1] = ST(env->stack, 0);
-				env->stack.stack_pointer--;
+				if (arg1 < ST(env->stack, -1)->u.array_value.size) {
+					ST(env->stack, -1)->u.array_value.value[arg1] = ST(env->stack, 0);
+				} else {
+					DBG_panic(("Array range error\n"));
+				}
+				env->stack.stack_pointer -= 2;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
@@ -645,7 +649,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				break;
 			}
 			case LPR_ADD_STRING: {
-				ST_STRING(env->stack, -1) = chain_string(ST(env->stack, -1), ST(env->stack, 0));
+				ST(env->stack, -1) = chain_string(ST(env->stack, -1), ST(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;

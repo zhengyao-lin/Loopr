@@ -106,27 +106,24 @@ popb
 
 /* ARRAY! */
 
-ldb 100
-ldb 100
-ldb 100
-ldb 100
-newarr.4
+//newarr [10][2][10]
 
-ldarr 0
-ldarr 0
-ldarr 0
-
-ldb.f8 3.141592653l
-starr 9
-starr 0
-starr 0
+newarr [2][3]
 
 .def arrayv
 stloc arrayv
 ldloc arrayv
 
-ldarr 0
-ldarr 0
-ldarr 9
+/*ldb 10
+ldb 10
+ldb 10
+ldb 100
+newarr.4*/
 
+ldarr [1]
+ldb.f8 3.141592653l
+starr 2
+
+ldloc arrayv
+ldarr [1][2]
 popf

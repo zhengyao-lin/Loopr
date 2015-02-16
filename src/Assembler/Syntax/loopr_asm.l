@@ -146,10 +146,12 @@ Loopr_Boolean st_character_literal_state;
 }
 <INITIAL>":"		return COLON;
 <INITIAL>","		return COMMA;
-<INITIAL>"{"		return LB;
-<INITIAL>"}"		return RB;
+<INITIAL>"{"		return LC;
+<INITIAL>"}"		return RC;
 <INITIAL>"("		return LP;
 <INITIAL>")"		return RP;
+<INITIAL>"["		return LB;
+<INITIAL>"]"		return RB;
 <INITIAL>"."		return DOT;
 
  /* Identifiers and Constants */

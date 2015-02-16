@@ -100,13 +100,6 @@ Walle_dispose_value(Loopr_Value **target)
 	if ((*target)->type == LPR_STRING) {
 		MEM_free((*target)->u.string_value);
 	} else if ((*target)->type == LPR_ARRAY) {
-		int i;
-
-		for (i = 0; i < (*target)->u.array_value.size; i++) {
-			if ((*target)->u.array_value.value[i]) {
-				Walle_dispose_value(&((*target)->u.array_value.value[i]));
-			}
-		}
 		MEM_free((*target)->u.array_value.value);
 	}
 

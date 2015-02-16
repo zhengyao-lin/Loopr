@@ -33,6 +33,10 @@
 #define NULL_VALUE (0x0)
 #define MEM_fill(obj, i) \
 	(memset(&(obj), (i), sizeof((obj))))
+#define Loopr_is_ref_type(value) \
+	((value)->type == LPR_STRING \
+  || (value)->type == LPR_OBJECT \
+  || (value)->type == LPR_ARRAY)
 
 /* execute.c */
 Loopr_Value *Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level);

@@ -12,7 +12,7 @@
 	Constant		*constant;
 	StatementList	*statement_list;
 }
-%token COLON COMMA LB RB LP RP DOT
+%token COLON COMMA LC RC LP RP LB RB DOT
 	   NEXT_LINE NULL_LITERAL
 %token <identifier>		IDENTIFIER
 %token <constant>		CHAR_LITERAL
@@ -80,9 +80,9 @@ compiler_ref
 	}
 	;
 block
-	: LB next_line_list_opt
+	: LC next_line_list_opt
 	  statement_list
-	  next_line_list_opt RB
+	  next_line_list_opt RC
 	{
 		$$ = Asm_create_block($3);
 	}
@@ -103,11 +103,15 @@ constant
 	;
 constant_list
 	: constant
-	| constant_list COMMA constant
+	| LB constant_list RB
+	{
+		$$ = $2;
+	}
+	| constant_list COMMA constant_list
 	{
 		$$ = Asm_chain_constant($1, $3);
 	}
-	| constant_list constant
+	| constant_list constant_list
 	{
 		$$ = Asm_chain_constant($1, $2);
 	}

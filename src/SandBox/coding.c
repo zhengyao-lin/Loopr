@@ -10,6 +10,7 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"ldnull",	0,	1},
 	{"ldstr",	0,	1},
 	{"ldloc",	0,	1},
+	{"ldarr",	1,	1},
 
 	{"conv",	1,	0},
 	{"bx",		1,	0},
@@ -21,6 +22,7 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"popstr",	1,	-1},
 
 	{"stloc",	1,	-1},
+	{"starr",	2,	-1},
 
 	{"br",		1,	-1},
 	{"dup",		1,	1},
@@ -35,6 +37,7 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"dec",		1,	0},
 
 	{"invoke",	0,	1},
+	{"newarr",	1,	0},
 
 	{"goto",	0,	0},
 	{"ret",		0,	0},

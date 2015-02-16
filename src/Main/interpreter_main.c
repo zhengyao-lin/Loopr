@@ -10,7 +10,7 @@
 
 ByteContainer *Gencode_compile(Asm_Compiler *compiler);
 int yylex_destroy();
-Natives_load_all();
+void Natives_load_all();
 
 int main(int argc, char **argv)
 {

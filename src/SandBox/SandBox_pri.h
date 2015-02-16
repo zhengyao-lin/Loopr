@@ -44,6 +44,7 @@ Loopr_Byte *Loopr_byte_serialize(const void *data, int length);
 
 Loopr_InfoTable *Loopr_alloc_info_table(Loopr_BasicType type);
 Loopr_Value *Loopr_alloc_value(Loopr_BasicType type);
+Loopr_Value *Loopr_alloc_value_without_add(Loopr_BasicType type);
 Loopr_Value *Loopr_create_string(Loopr_Byte *data, int *offset);
 #define Loopr_create_null() (NULL)
 Loopr_Value *Loopr_create_object(Loopr_Value *orig);

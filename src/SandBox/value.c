@@ -69,6 +69,23 @@ Loopr_alloc_value(Loopr_BasicType type)
 	return ret;
 }
 
+
+Loopr_Value *
+Loopr_alloc_value_without_add(Loopr_BasicType type)
+{
+	Loopr_Value *ret;
+
+	ret = MEM_malloc(sizeof(Loopr_Value));
+	ret->type = type;
+	ret->u.double_value = NULL_VALUE;
+
+	ret->marked = 0;
+	ret->prev = NULL;
+	ret->next = NULL;
+
+	return ret;
+}
+
 Loopr_Value *
 Loopr_create_string(Loopr_Byte *data, int *offset)
 {

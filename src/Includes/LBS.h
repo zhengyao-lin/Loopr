@@ -15,6 +15,7 @@ typedef enum {
 	LPR_LD_NULL,
 	LPR_LD_STRING,
 	LPR_LD_LOC,
+	LPR_LD_ARRAY,
 
 	LPR_CONVERT,
 	LPR_BOXING,
@@ -26,6 +27,7 @@ typedef enum {
 	LPR_POP_STRING,
 
 	LPR_STORE_LOC,
+	LPR_STORE_ARRAY,
 
 	LPR_BRANCH,
 	LPR_DUPLICATE,
@@ -40,6 +42,7 @@ typedef enum {
 	LPR_DEC,
 
 	LPR_INVOKE,
+	LPR_NEW_ARRAY,
 
 	LPR_GOTO,
 	LPR_RETURN,
@@ -106,6 +109,7 @@ typedef enum {
 
 	/* Pointer Byte */
 	LPR_OBJECT,
+	LPR_ARRAY,
 
 	LPR_BASIC_TYPE_PLUS_1
 } Loopr_BasicType;
@@ -113,6 +117,11 @@ typedef enum {
 typedef struct Loopr_InfoTable_tag {
 	Loopr_BasicType type;
 } Loopr_InfoTable;
+
+typedef struct Loopr_Array_tag {
+	Loopr_Size size;
+	struct Loopr_Value_tag **value;
+} Loopr_Array;
 
 typedef struct Loopr_Value_tag {
 	Loopr_Int32 marked;
@@ -138,6 +147,7 @@ typedef struct Loopr_Value_tag {
 		Loopr_Char				*string_value;
 
 		struct Loopr_Value_tag	*object_value;
+		Loopr_Array				array_value;
 	} u;
 
 	struct Loopr_Value_tag *prev;

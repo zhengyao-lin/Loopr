@@ -211,7 +211,7 @@ Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 						 Loopr_Type_Info[type].size);
 	} else { /* float convert */
 		if (list->constant->type == CONST_SINGLE) { /* single to double */
-			if (list->constant->type == CONST_DOUBLE) {
+			if (type == LPR_DOUBLE) {
 				list->constant->u.double_value = (Loopr_Double)list->constant->u.single_value;
 			} else {
 				list->constant->u.double_value = (Loopr_Double)GET_BIT(list->constant->u.int64_value,
@@ -222,7 +222,7 @@ Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 						 	(Loopr_Byte *)&list->constant->u.double_value,
 						 	Loopr_Type_Info[type].size);
 		} else { /* double to single */
-			if (list->constant->type == CONST_SINGLE) {
+			if (type == LPR_SINGLE) {
 				list->constant->u.single_value = (Loopr_Single)list->constant->u.double_value;
 			} else {
 				list->constant->u.single_value = (Loopr_Single)GET_BIT(list->constant->u.int64_value,

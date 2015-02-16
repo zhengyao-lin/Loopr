@@ -2,7 +2,7 @@
 #include <time.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
-#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 512)
+#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 2048)
 
 static void (*__walle_marker)(void);
 static Loopr_Int64 __threshold = WALLE_COLLECT_THRESHOLD;
@@ -99,6 +99,15 @@ Walle_dispose_value(Loopr_Value **target)
 
 	if ((*target)->type == LPR_STRING) {
 		MEM_free((*target)->u.string_value);
+	} else if ((*target)->type == LPR_ARRAY) {
+		int i;
+
+		for (i = 0; i < (*target)->u.array_value.size; i++) {
+			if ((*target)->u.array_value.value[i]) {
+				Walle_dispose_value(&((*target)->u.array_value.value[i]));
+			}
+		}
+		MEM_free((*target)->u.array_value.value);
 	}
 
 	if ((*target)->prev) {
@@ -144,7 +153,7 @@ Walle_check_mem()
 	if (__allocd_size >= __threshold) {
 		Walle_gcollect();
 		if (__allocd_size >= __threshold) {
-			__threshold += WALLE_COLLECT_THRESHOLD;
+			__threshold += __allocd_size + WALLE_COLLECT_THRESHOLD;
 		}
 	}
 

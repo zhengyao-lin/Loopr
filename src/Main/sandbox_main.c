@@ -9,7 +9,7 @@
 #include "Interfaces.h"
 #include "Versions.h"
 
-Natives_load_all();
+void Natives_load_all();
 
 int main(int argc, char **argv)
 {

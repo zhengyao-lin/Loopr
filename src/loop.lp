@@ -91,7 +91,7 @@ invoke TRIMUL, 3
 popb
 
 HI: {
-	ldstr "hi"
+	ldstr "hi block"
 	popstr
 }
 
@@ -102,3 +102,31 @@ popstr
 ldstr "260.0"
 conv.b8
 popb
+
+
+/* ARRAY! */
+
+ldb 100
+ldb 100
+ldb 100
+ldb 100
+newarr.4
+
+ldarr 0
+ldarr 0
+ldarr 0
+
+ldb.f8 3.141592653l
+starr 9
+starr 0
+starr 0
+
+.def arrayv
+stloc arrayv
+ldloc arrayv
+
+ldarr 0
+ldarr 0
+ldarr 9
+
+popf

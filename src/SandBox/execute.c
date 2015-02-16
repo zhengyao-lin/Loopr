@@ -137,19 +137,27 @@ Private_init_local_variable(ExeEnvironment *env, Loopr_BasicType type, int index
 static Loopr_Value *
 Private_copy_variable(Loopr_Value *src)
 {
-	ret_value = NULL;
+	Loopr_Value *ret = NULL;
 	if (src) {
-		ret_value = Loopr_alloc_value(src->type);
-		ret_value->u = src->u;
+		ret = Loopr_alloc_value(src->type);
+		ret->u = src->u;
 		if (src->type == LPR_STRING) {
 			if (src->u.string_value) {
-				ret_value->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (Loopr_wcslen(src->u.string_value) + 1));
-				Loopr_wcscpy(ret_value->u.string_value, src->u.string_value);
+				ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (Loopr_wcslen(src->u.string_value) + 1));
+				Loopr_wcscpy(ret->u.string_value, src->u.string_value);
+			}
+		} else if (src->type == LPR_ARRAY) {
+			int i;
+
+			ret->u.array_value.size = src->u.array_value.size;
+			ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value *) * ret->u.array_value.size);
+			for (i = 0; i < src->u.array_value.size; i++) {
+				ret->u.array_value.value[i] = Private_copy_variable(src->u.array_value.value[i]);
 			}
 		}
 	}
 
-	return ret_value;
+	return ret;
 }
 
 static void
@@ -202,11 +210,18 @@ Private_mark_value(Loopr_Value *obj)
 {
 	if (!obj) {
 		return;
+	} else if (obj->marked == Walle_get_alive_period()) {
+		return;
 	}
 
 	obj->marked = Walle_get_alive_period();
 	if (obj->type == LPR_OBJECT) {
 		Private_mark_value(obj->u.object_value);
+	} else if (obj->type == LPR_ARRAY) {
+		int i;
+		for (i = 0; i < obj->u.array_value.size; i++) {
+			Private_mark_value(obj->u.array_value.value[i]);
+		}
 	}
 
 	return;
@@ -414,6 +429,49 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 #define LOWER_LEVEL ("|--\t")
 
 Loopr_Value *
+Private_create_one_dim_array(Loopr_Int32 size)
+{
+	Loopr_Value *ret;
+
+	ret = Loopr_alloc_value(LPR_ARRAY);
+	ret->u.array_value.size = size;
+	if (size) {
+		ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value *) * size);
+		memset(&ret->u.array_value.value[0], NULL_VALUE, sizeof(Loopr_Value *) * size);
+	} else {
+		ret->u.array_value.value = NULL;
+	}
+
+	return ret;
+}
+
+Loopr_Value *
+Private_create_array(ExeEnvironment *env, int dim)
+{
+	Loopr_Value *ret;
+	int size = ST_INT64(env->stack, -dim + 1);
+	int i;
+
+	if (dim == 1) {
+		ret = Private_create_one_dim_array(size);
+		return ret;
+	}
+
+	ret = Loopr_alloc_value(LPR_ARRAY);
+	ret->u.array_value.size = size;
+	if (size) {
+		ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value *) * size);
+		for (i = 0; i < size; i++) {
+			ret->u.array_value.value[i] = Private_create_array(env, dim - 1);
+		}
+	} else {
+		ret->u.array_value.value = NULL;
+	}
+
+	return ret;
+}
+
+Loopr_Value *
 Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 {
 	int arg1;
@@ -476,6 +534,18 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
+			case LPR_LD_ARRAY: {
+				Loopr_byte_deserialize(&arg1,
+						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
+				if (arg1 < ST(env->stack, 0)->u.array_value.size) {
+					ST(env->stack, 1) = ST(env->stack, 0)->u.array_value.value[arg1];
+				} else {
+					DBG_panic(("Array range error\n"));
+				}
+				env->stack.stack_pointer++;
+				pc += 1 + sizeof(Loopr_Int32);
+				break;
+			}
 			case LPR_CONVERT: {
 				Private_convert(ST_TYPE(env->stack, 0), env->exe->code[pc + 1], ST(env->stack, 0));
 				pc += 2;
@@ -531,6 +601,14 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
 				Private_assign_local_variable(env, arg1, ST(env->stack, 0));
+				env->stack.stack_pointer--;
+				pc += 1 + sizeof(Loopr_Int32);
+				break;
+			}
+			case LPR_STORE_ARRAY: {
+				Loopr_byte_deserialize(&arg1,
+						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
+				ST(env->stack, -1)->u.array_value.value[arg1] = ST(env->stack, 0);
 				env->stack.stack_pointer--;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
@@ -609,6 +687,13 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_INVOKE: {
 				Private_invoke_function(env, env->exe->code[pc + 1],
 										env->exe->code[pc + 1 + sizeof(Loopr_Int32)], &pc, &base);
+				break;
+			}
+			case LPR_NEW_ARRAY: {
+				arg1 = env->exe->code[pc + 1]; /* dim */
+				ST(env->stack, -arg1 + 1) = Private_create_array(env, arg1);
+				env->stack.stack_pointer -= arg1 - 1;
+				pc += 2;
 				break;
 			}
 			case LPR_GOTO: {

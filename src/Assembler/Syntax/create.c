@@ -69,10 +69,10 @@ Asm_chain_bytecode(Bytecode *list, char *identifier, Loopr_Byte code, Loopr_Bool
 Statement *
 Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 {
-	Asm_Compiler *compiler;
+	NameSpace *name_space;
 	Statement *ret;
 
-	compiler = Asm_get_current_compiler();
+	name_space = &Asm_get_current_compiler()->name_space[Asm_get_current_compiler()->current_name_space_index];
 	ret = ASM_malloc(sizeof(Statement));
 	ret->label = label;
 	ret->bytecode = code;
@@ -81,18 +81,18 @@ Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 
 	if (code && code->name == NULL && code->next
 		&& !strcmp(code->next->name, Loopr_CR_Info[LCR_FUNCTION].assembly_name)) {
-		if (compiler->function_definition) {
-			compiler->function_definition = MEM_realloc(compiler->function_definition,
-														sizeof(FunctionDefinition) * (compiler->function_count + 1));
+		if (name_space->function_definition) {
+			name_space->function_definition = MEM_realloc(name_space->function_definition,
+														sizeof(FunctionDefinition) * (name_space->function_count + 1));
 		} else {
-			compiler->function_definition = MEM_malloc(sizeof(FunctionDefinition) * (compiler->function_count + 1));
+			name_space->function_definition = MEM_malloc(sizeof(FunctionDefinition) * (name_space->function_count + 1));
 		}
 
-		compiler->function_definition[compiler->function_count].is_void = LPR_False;
+		name_space->function_definition[name_space->function_count].is_void = LPR_False;
 		while (const_opt && const_opt->type == CONST_KEYWORD) {
 			switch (const_opt->u.keyword_value) {
 				case ASM_VOID:
-					compiler->function_definition[compiler->function_count].is_void = LPR_True;
+					name_space->function_definition[name_space->function_count].is_void = LPR_True;
 					const_opt = const_opt->next;
 					break;
 				default:
@@ -100,8 +100,8 @@ Asm_create_statement(char *label, Bytecode *code, Constant *const_opt)
 					break;
 			}
 		}
-		compiler->function_definition[compiler->function_count].name = MEM_strdup(const_opt->u.string_value);
-		compiler->function_count++;
+		name_space->function_definition[name_space->function_count].name = MEM_strdup(const_opt->u.string_value);
+		name_space->function_count++;
 	}
 
 	return ret;
@@ -149,6 +149,47 @@ Asm_create_block(StatementList *list)
 
 	ret = Asm_alloc_constant(CONST_BLOCK);
 	ret->u.block = list;
+
+	return ret;
+}
+
+void
+Asm_begin_namespace(char *name)
+{
+	Asm_Compiler *compiler;
+
+	compiler = Asm_get_current_compiler();
+	compiler->name_space = MEM_realloc(compiler->name_space,
+									   sizeof(NameSpace) * (compiler->name_space_count + 1));
+	compiler->name_space[compiler->name_space_count].name = name;
+	compiler->name_space[compiler->name_space_count].top_level = NULL;
+	compiler->name_space[compiler->name_space_count].function_count = 0;
+	compiler->name_space[compiler->name_space_count].function_definition = NULL;
+	compiler->current_name_space_index = compiler->name_space_count;
+	compiler->name_space_count++;
+
+	return;
+}
+
+PackageName *
+Asm_create_package_name(char *name)
+{
+	PackageName *ret;
+
+	ret = ASM_malloc(sizeof(PackageName));
+	ret->name = name;
+	ret->next = NULL;
+
+	return ret;
+}
+
+PackageName *
+Asm_chain_package_name(char *name, PackageName *list)
+{
+	PackageName *ret;
+
+	ret = Asm_create_package_name(name);
+	ret->next = list;
 
 	return ret;
 }

@@ -12,8 +12,9 @@
 	Constant		*constant;
 	StatementList	*statement_list;
 }
-%token COLON COMMA LC RC LP RP LB RB DOT
-	   NEXT_LINE NULL_LITERAL
+%token COLON COMMA LC RC LP RP LB RB LAB RAB DOT
+		NEXT_LINE NULL_LITERAL
+		NAMESPACE DEFAULT
 %token <identifier>		IDENTIFIER
 %token <constant>		CHAR_LITERAL
 %token <constant>		DIGIT_LITERAL
@@ -22,25 +23,51 @@
 %token <constant>		KEYWORD_LITERAL
 
 %type <bytecode> dot_bytecode compiler_ref
-%type <constant> constant constant_list constant_list_opt block
-%type <statement> statement label_statement
+%type <constant> constant constant_list constant_list_opt block package_name
+%type <statement> statement label_statement decl_only_statement
 %type <statement_list> statement_list
 %%
 /*************** Frame ***************/
 translation_unit
 	: /* NULL */
-	| translation_unit top_level_unit translation_unit
+	| next_line_list_opt
+	  namespace_unit
+	  next_line_list_opt
+	  translation_unit
+	  next_line_list_opt
+	;
+namespace_unit
+	: namespace_begin top_level_unit namespace_end
+	| DEFAULT IDENTIFIER NEXT_LINE
+	{
+		Asm_Compiler *current_compiler;
+		current_compiler = Asm_get_current_compiler();
+		if (current_compiler->default_name_space) {
+			MEM_free(current_compiler->default_name_space);
+		}
+		current_compiler->default_name_space = $2;
+	}
+	;
+namespace_begin
+	: NAMESPACE IDENTIFIER LC
+	{
+		Asm_begin_namespace($2);
+	}
+	;
+namespace_end
+	: RC
 	;
 top_level_unit
 	: next_line_list_opt statement_list next_line_list_opt
 	{
 		Asm_Compiler *current_compiler;
 		current_compiler = Asm_get_current_compiler();
-		if (current_compiler->top_level) {
-			Asm_cat_statement_list(current_compiler->top_level,
+
+		if (current_compiler->name_space[current_compiler->current_name_space_index].top_level) {
+			Asm_cat_statement_list(current_compiler->name_space[current_compiler->current_name_space_index].top_level,
 								   $2);
 		} else {
-			current_compiler->top_level = $2;
+			current_compiler->name_space[current_compiler->current_name_space_index].top_level = $2;
 		}
 	}
 	;
@@ -86,6 +113,21 @@ block
 	{
 		$$ = Asm_create_block($3);
 	}
+	| LC next_line_list_opt
+	  next_line_list_opt RC
+	{
+		$$ = Asm_create_block(NULL);
+	}
+	;
+package_name
+	: IDENTIFIER
+	{
+		$$ = Asm_create_package_name($1);
+	}
+	| IDENTIFIER DOT package_name
+	{
+		$$ = Asm_chain_package_name($1, $3);
+	}
 	;
 constant
 	: CHAR_LITERAL
@@ -100,6 +142,12 @@ constant
 		$$ = constant;
 	}
 	| block
+	| LAB package_name RAB
+	{
+		Constant *constant = Asm_alloc_constant(CONST_PACKAGE_NAME);
+		constant->u.package_name_value = $2;
+		$$ = constant;
+	}
 	;
 constant_list
 	: constant
@@ -149,14 +197,17 @@ label_statement
 		$$ = Asm_create_statement($1, NULL, $4);
 	}
 	;
-statement
-	: label_statement
-	| dot_bytecode constant_list_opt NEXT_LINE
+decl_only_statement
+	: compiler_ref constant_list_opt NEXT_LINE
 	{
 		$$ = Asm_create_statement(NULL, $1, $2);
 	}
-	| compiler_ref constant_list_opt NEXT_LINE
-	{	
+	;
+statement
+	: label_statement
+	| decl_only_statement	
+	| dot_bytecode constant_list_opt NEXT_LINE
+	{
 		$$ = Asm_create_statement(NULL, $1, $2);
 	}
 	;

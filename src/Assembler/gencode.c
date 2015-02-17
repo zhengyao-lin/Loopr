@@ -28,6 +28,7 @@ struct ConstTypeMapping_tag {
 	{CONST_DOUBLE,	LPR_DOUBLE},
 
 	{CONST_STRING,	LPR_STRING},
+	{CONST_LABEL,	LPR_STRING},
 };
 
 ByteInfo Loopr_CR_Info[] = {
@@ -122,7 +123,7 @@ Gencode_push_constant(ByteContainer *env, Constant *constant)
 							 strlen(constant->u.string_value) + 1);
 			break;	
 		case CONST_LABEL:
-			Label_ref(constant->u.string_value, env->next);
+			Label_ref(env, constant->u.string_value, env->next);
 			Coding_push_code(env, LPR_NULL_CODE,
 					 		 (Loopr_Byte *)&nullv,
 					 		 sizeof(Loopr_Int32));
@@ -253,6 +254,21 @@ Gencode_dispose_bytecode(Bytecode *header)
 }
 
 static void
+Gencode_dispose_package_name(PackageName *pn)
+{
+	PackageName *pos;
+	PackageName *last;
+
+	for (pos = pn; pos; last = pos, pos = pos->next, ASM_free(last)) {
+		if (pos->name) {
+			MEM_free(pos->name);
+		}
+	}
+
+	return;
+}
+
+static void
 Gencode_dispose_constant(Constant *header)
 {
 	Constant *pos;
@@ -263,6 +279,8 @@ Gencode_dispose_constant(Constant *header)
 		if (pos->type == CONST_STRING
 			|| pos->type == CONST_LABEL) {
 			MEM_free(pos->u.string_value);
+		} else if (pos->type == CONST_PACKAGE_NAME) {
+			Gencode_dispose_package_name(pos->u.package_name_value);
 		}
 	}
 	return;
@@ -340,14 +358,16 @@ Gencode_get_constant_by_index(Constant *head, int index)
 }
 
 static int
-Gencode_get_function_index(ByteContainer *env, char *name)
+Gencode_get_function_index_name_space(ByteContainer *env, char *name, int ns_index)
 {
 	int i;
 	Asm_Compiler *compiler;
+	NameSpace *ns;
 
 	compiler = Asm_get_current_compiler();
-	for (i = 0; i < compiler->function_count; i++) {
-		if (!strcmp(compiler->function_definition[i].name, name)) {
+	ns = &compiler->name_space[ns_index];
+	for (i = 0; i < ns->function_count; i++) {
+		if (!strcmp(ns->function_definition[i].name, name)) {
 			return i;
 		}
 	}
@@ -355,6 +375,12 @@ Gencode_get_function_index(ByteContainer *env, char *name)
 	DBG_panic(("Undefined function \"%s\"\n", name));
 
 	return -1;
+}
+
+static int
+Gencode_get_function_index(ByteContainer *env, char *name)
+{
+	return Gencode_get_function_index_name_space(env, name, Asm_get_current_compiler()->current_name_space_index);
 }
 
 static void
@@ -399,18 +425,44 @@ Gencode_compiler_reference(ByteContainer *env, Statement *list)
 	ASM_free(list);
 }
 
+static int
+Gencode_search_name_space_index(char *identifier)
+{
+	int i;
+	Asm_Compiler *current_compiler;
+
+	if (identifier == NULL) {
+		return 0;
+	}
+
+	current_compiler = Asm_get_current_compiler();
+	for (i = 0; i < current_compiler->name_space_count; i++) {
+		if (!strcmp(current_compiler->name_space[i].name, identifier)) {
+			return i;
+		}
+	}
+
+	DBG_panic(("Cannot find namespace by identifier \"%s\"\n", identifier));
+
+	return -1;
+}
+
 static void
 Gencode_statement(ByteContainer *env, Statement *list)
 {
 	int index;
+	int argc;
 	Loopr_BasicType type;
 	Loopr_Byte code;
 	Asm_Compiler *compiler;
+	NameSpace *ns;
 	Constant *cpos;
 
 	compiler = Asm_get_current_compiler();
+	ns = &compiler->name_space[compiler->current_name_space_index];
+
 	if (list->label) {
-		Label_add(list->label, env->next);
+		Label_add(env, list->label, env->next);
 		Gencode_push_constant_list(env, list->constant);
 		MEM_free(list->label);
 		goto DISPOSE;
@@ -449,14 +501,26 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			break;
 		case LPR_INVOKE:
 			Coding_push_code(env, code, NULL, 0);
-			index = Gencode_get_function_index(env, list->constant->u.string_value);
+			if (list->constant->type == CONST_STRING
+				|| list->constant->type == CONST_LABEL) {
+				Coding_push_one_byte(env, LPR_False);
+				index = Gencode_get_function_index(env, list->constant->u.string_value);
+				argc = list->constant->next->u.int32_value;
+			} else if (list->constant->type == CONST_PACKAGE_NAME) {
+				Coding_push_one_byte(env, LPR_True);
+				index = Gencode_search_name_space_index(list->constant->u.package_name_value->name);
+				Coding_push_code(env, LPR_NULL_CODE,
+								 &index,
+								 sizeof(Loopr_Int32));
+				ns = &compiler->name_space[index];
+				index = Gencode_get_function_index_name_space(env, list->constant->next->u.string_value, index);
+			}
+
 			Coding_push_code(env, LPR_NULL_CODE,
 							 (Loopr_Byte *)&index,
 							 sizeof(Loopr_Int32));
-			Coding_push_code(env, LPR_NULL_CODE,
-							 (Loopr_Byte *)&list->constant->next->u.int32_value,
-							 sizeof(Loopr_Int32));
-			if (compiler->function_definition[index].is_void) {
+			Coding_push_one_byte(env, argc);
+			if (ns->function_definition[index].is_void) {
 				Coding_push_code(env, LPR_POP, NULL, 0);
 			}
 			break;
@@ -540,7 +604,7 @@ Gencode_statement_list(ByteContainer *env, StatementList *list)
 	for (pos = list; pos; last = pos, pos = pos->next, ASM_free(last)) {
 		Gencode_statement(env, pos->statement);
 	}
-	Label_set_all();
+	Label_set_all(env);
 
 	return;
 }
@@ -548,11 +612,28 @@ Gencode_statement_list(ByteContainer *env, StatementList *list)
 ByteContainer *
 Gencode_compile(Asm_Compiler *compiler)
 {
+	int i;
+	int default_index;
 	ByteContainer *container;
 
 	Asm_set_current_compiler(compiler);
 	container = Coding_init_coding_env();
-	Gencode_statement_list(container, compiler->top_level);
+
+	default_index = Gencode_search_name_space_index(compiler->default_name_space);
+	container->sub_name_space_count = compiler->name_space_count;
+	container->sub_name_space = MEM_malloc(sizeof(ByteContainer) * compiler->name_space_count);
+	for (i = 0; i < compiler->name_space_count; i++) {
+		container->sub_name_space[i] = Coding_init_coding_env();
+		if (i != default_index) {
+			compiler->current_name_space_index = i;
+			Gencode_statement_list(container->sub_name_space[i],
+								   compiler->name_space[i].top_level);
+		}
+	}
+
+	compiler->current_name_space_index = default_index;
+	Gencode_statement_list(container, compiler->name_space[default_index].top_level);
+
 	Asm_clean_local_env(container);
 
 	return container;

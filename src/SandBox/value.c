@@ -5,11 +5,11 @@
 #include "UTL.h"
 
 TypeInfo Loopr_Type_Info[] = {
-	{"dummy",	"dummy", 		"",			-1},
-	{"null",	"Null",			"",			0},
+	{"dummy",	"dummy", 		NULL,		-1},
+	{"null",	"Null",			NULL,		0},
 
 	{"bl",		"Boolean",		"%d",		sizeof(Loopr_Boolean)},
-	{"c4",		"Char",			"%u",		sizeof(Loopr_Char)},
+	{"c32",		"Char",			"%u",		sizeof(Loopr_Char)},
 
 	{"s8",		"SByte",		"%d",		sizeof(Loopr_SByte)},
 	{"b8",		"Byte",			"%u",		sizeof(Loopr_Byte)},
@@ -27,7 +27,8 @@ TypeInfo Loopr_Type_Info[] = {
 	{"f16",		"Double",		"%lf",		sizeof(Loopr_Double)},
 	{"str",		"String",		"%s",		sizeof(Loopr_Char *)},
 
-	{"obj",		"Object",		"",			sizeof(Loopr_Value *)},
+	{"obj",		"Object",		NULL,		sizeof(Loopr_Value *)},
+	{"arr",		"Array",		NULL,		sizeof(Loopr_Array)},
 };
 
 Loopr_Byte *
@@ -69,23 +70,6 @@ Loopr_alloc_value(Loopr_BasicType type)
 	return ret;
 }
 
-
-Loopr_Value *
-Loopr_alloc_value_without_add(Loopr_BasicType type)
-{
-	Loopr_Value *ret;
-
-	ret = MEM_malloc(sizeof(Loopr_Value));
-	ret->type = type;
-	ret->u.double_value = NULL_VALUE;
-
-	ret->marked = 0;
-	ret->prev = NULL;
-	ret->next = NULL;
-
-	return ret;
-}
-
 Loopr_Value *
 Loopr_create_string(Loopr_Byte *data, int *offset)
 {
@@ -99,6 +83,20 @@ Loopr_create_string(Loopr_Byte *data, int *offset)
 
 	ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (length + 1));
 	Loopr_mbstowcs((char *)data, ret->u.string_value);
+
+	return ret;
+}
+
+Loopr_Char *
+Loopr_conv_string(Loopr_Byte *data)
+{
+	int length;
+	Loopr_Char *ret;
+
+	length = Loopr_mbstowcs_len((char *)data);
+
+	ret = MEM_malloc(sizeof(Loopr_Char) * (length + 1));
+	Loopr_mbstowcs((char *)data, ret);
 
 	return ret;
 }

@@ -70,6 +70,9 @@ Coding_init_coding_env(void)
 	env->local_variable_count = 0;
 	env->local_variable = NULL;
 
+	env->sub_name_space_count = 0;
+	env->sub_name_space = NULL;
+
 	env->function_count = 0;
 	env->function = NULL;
 
@@ -151,6 +154,13 @@ Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args
 	return;
 }
 
+void
+Coding_push_one_byte(ByteContainer *env, Loopr_Byte code)
+{
+	Coding_byte_cat(env, &code, 1);
+	return;
+}
+
 ExeContainer *
 Coding_alloc_exe_container(ByteContainer *env)
 {
@@ -170,6 +180,10 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	int i;
 	ExeEnvironment *ret;
 
+	if (!env) {
+		return NULL;
+	}
+
 	ret = MEM_malloc(sizeof(ExeEnvironment));
 	ret->wflag = wflag;
 	ret->exe = Coding_alloc_exe_container(env);
@@ -185,7 +199,15 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->local_variable_map->variable = NULL;
 	ret->local_variable_map->prev = NULL;
 
-	ret->native_function = env->native_function;
+	ret->sub_name_space_count = env->sub_name_space_count;
+	ret->sub_name_space = NULL;
+	if (env->sub_name_space_count > 0) {
+		ret->sub_name_space = MEM_malloc(sizeof(ExeEnvironment *) * ret->sub_name_space_count);
+		for (i = 0; i < env->sub_name_space_count; i++) {
+			ret->sub_name_space[i] = Coding_init_exe_env(env->sub_name_space[i], wflag);
+		}
+	}
+
 	ret->function_count = env->function_count;
 	ret->function = NULL;
 	if (env->function_count > 0) {
@@ -194,6 +216,7 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 			ret->function[i] = Coding_init_exe_env(env->function[i], wflag);
 		}
 	}
+	ret->native_function = env->native_function;
 
 	return ret;
 }

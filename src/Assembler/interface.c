@@ -25,10 +25,11 @@ Asm_init_compiler()
 	Asm_Compiler *ret;
 
 	ret = ASM_malloc(sizeof(Asm_Compiler));
-	ret->top_level = NULL;
+	ret->default_name_space = NULL;
+	ret->current_name_space_index = -1;
+	ret->name_space_count = 0;
+	ret->name_space = NULL;
 	ret->current_line_number = 0;
-	ret->function_count = 0;
-	ret->function_definition = NULL;
 
 	return ret;
 }
@@ -73,14 +74,32 @@ Asm_clean_local_env(ByteContainer *env)
 }
 
 void
+Asm_dispose_name_space(NameSpace *ns)
+{
+	int i;
+
+	MEM_free(ns->name);
+	for (i = 0; i < ns->function_count; i++) {
+		MEM_free(ns->function_definition[i].name);
+	}
+	MEM_free(ns->function_definition);
+
+	return;
+}
+
+void
 Asm_dispose_compiler(Asm_Compiler *compiler)
 {
 	int i;
 
-	for (i = 0; i < compiler->function_count; i++) {
-		MEM_free(compiler->function_definition[i].name);
+	if (compiler->default_name_space) {
+		MEM_free(compiler->default_name_space);
 	}
-	MEM_free(compiler->function_definition);
+
+	for (i = 0; i < compiler->name_space_count; i++) {
+		Asm_dispose_name_space(&compiler->name_space[i]);
+	}
+	MEM_free(compiler->name_space);
 
 	ASM_free(compiler);
 	return;

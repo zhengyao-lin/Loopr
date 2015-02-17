@@ -31,6 +31,7 @@
 	 ((p)[7] = (value) & 0xff))
 #define NULL_VISUAL (L"(null)")
 #define NULL_VALUE (0x0)
+#define CONV_STRING_BUFFER_SIZE (1024)
 #define MEM_fill(obj, i) \
 	(memset(&(obj), (i), sizeof((obj))))
 #define Loopr_is_ref_type(value) \
@@ -48,7 +49,7 @@ Loopr_Byte *Loopr_byte_serialize(const void *data, int length);
 
 Loopr_InfoTable *Loopr_alloc_info_table(Loopr_BasicType type);
 Loopr_Value *Loopr_alloc_value(Loopr_BasicType type);
-Loopr_Value *Loopr_alloc_value_without_add(Loopr_BasicType type);
+Loopr_Char *Loopr_conv_string(Loopr_Byte *data);
 Loopr_Value *Loopr_create_string(Loopr_Byte *data, int *offset);
 #define Loopr_create_null() (NULL)
 Loopr_Value *Loopr_create_object(Loopr_Value *orig);
@@ -61,6 +62,7 @@ int Coding_init_local_variable(ByteContainer *env, char *identifier);
 int Coding_get_local_variable_index(ByteContainer *env, char *name);
 void Coding_byte_cat(ByteContainer *env, Loopr_Byte *src, int count);
 void Coding_push_code(ByteContainer *env, Loopr_Byte code, Loopr_Byte *args, int args_count);
+void Coding_push_one_byte(ByteContainer *env, Loopr_Byte code);
 ExeContainer *Coding_alloc_exe_container(ByteContainer *env);
 ExeEnvironment *Coding_init_exe_env(ByteContainer *env, WarningFlag wflag);
 

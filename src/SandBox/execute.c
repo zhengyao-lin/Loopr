@@ -277,14 +277,20 @@ Private_dispose_arguments(LocalVariableMap *map)
 }
 
 static void
-Private_invoke_function(ExeEnvironment *env, int index, int argc,
+Private_invoke_function(ExeEnvironment *env, int index, int argc, int name_space,
 						int *pc_p, int *base_p)
 {
 	CallInfo *call_info;
 	ExeEnvironment *callee;
 
 	outer = Private_get_top_level();
-	callee = outer->function[index];
+	if (name_space >= 0) {
+		callee = outer->sub_name_space[name_space]->function[index];
+		*pc_p += 3 + sizeof(Loopr_Int32) + sizeof(Loopr_Int32);
+	} else {
+		callee = outer->function[index];
+		*pc_p += 3 + sizeof(Loopr_Int32);
+	}
 
 	if (callee->native_function) {/* is native function */
 		env->stack.stack_pointer -= argc;
@@ -292,7 +298,6 @@ Private_invoke_function(ExeEnvironment *env, int index, int argc,
 													&env->stack.value[env->stack.stack_pointer + 1]);
 		ST(env->stack, 1) = ret_value;
 		env->stack.stack_pointer++;
-		*pc_p += 1 + (sizeof(Loopr_Int32) * 2);
 		return;
 	}
 
@@ -300,7 +305,7 @@ Private_invoke_function(ExeEnvironment *env, int index, int argc,
 	call_info = malloc(sizeof(CallInfo));
 	call_info->marked = 0;
 	call_info->filler = 0;
-	call_info->pc = *pc_p + 1 + (sizeof(Loopr_Int32) * 2);
+	call_info->pc = *pc_p;
 	call_info->caller = env->exe;
 
 	Private_expand_stack(&env->stack, callee->stack.alloc_size);
@@ -348,7 +353,7 @@ Private_do_return(ExeEnvironment *env, int *pc_p, int *base_p)
 	return ret_value;
 }
 
-char *
+static char *
 Private_convert_string_to_byte(Loopr_Char *str, char *controller)
 {
 	char ret[16];
@@ -365,9 +370,12 @@ Private_convert_string_to_byte(Loopr_Char *str, char *controller)
 	return ret;
 }
 
-void
+static void
 Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 {
+	int length;
+	char buffer[CONV_STRING_BUFFER_SIZE];
+
 	if (from == to) {
 		return;
 	}
@@ -380,6 +388,20 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 		memcpy(&dest->u.int64_value,
 			   Private_convert_string_to_byte(dest->u.string_value, Loopr_Type_Info[to].scan_controller),
 			   Loopr_Type_Info[to].size);
+		dest->type = to;
+		return;
+	}
+
+	if (to == LPR_STRING) {
+		if (from >= LPR_BOOLEAN && from <= LPR_UINT64) {
+			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->u.int64_value);
+		} else if (from == LPR_SINGLE) {
+			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->u.single_value);
+		} else if (from == LPR_DOUBLE) {
+			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->u.double_value);
+		}
+
+		dest->u.string_value = Loopr_conv_string(buffer);
 		dest->type = to;
 		return;
 	}
@@ -417,8 +439,13 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 				dest->u.double_value = (Loopr_Double)GET_BIT(dest->u.int64_value, from);
 			}
 			break;
+		case LPR_OBJECT:
+			DBG_panic(("Convert Object type: Use bx/unbx instead\n"));
+			break;
 		default:
-			DBG_panic(("Unsupport convert type\n"));
+			DBG_panic(("Unsupport convert type: %s to %s\n",
+					   Loopr_Type_Info[from].assembly_name,
+					   Loopr_Type_Info[to].assembly_name));
 			break;
 	}
 	dest->type = to;
@@ -428,7 +455,7 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 
 #define LOWER_LEVEL ("|--\t")
 
-Loopr_Value *
+static Loopr_Value *
 Private_create_one_dim_array(Loopr_Int32 size)
 {
 	Loopr_Value *ret;
@@ -445,7 +472,7 @@ Private_create_one_dim_array(Loopr_Int32 size)
 	return ret;
 }
 
-Loopr_Value *
+static Loopr_Value *
 Private_create_array(ExeEnvironment *env, int dim)
 {
 	Loopr_Value *ret;
@@ -469,6 +496,41 @@ Private_create_array(ExeEnvironment *env, int dim)
 	}
 
 	return ret;
+}
+
+static Loopr_Value *
+Private_get_array(Loopr_Value *array, int index)
+{
+	if (array && array->type == LPR_ARRAY) {
+		if (index < array->u.array_value.size) {
+			return array->u.array_value.value[index];
+		} else {
+			DBG_panic(("Array range error: The size of array is %d, but the given index is %d\n",
+					   array->u.array_value.size,
+					   index));
+		}
+	} else {
+		DBG_panic(("Use array method to non-array value\n"));
+	}
+	return NULL;
+}
+
+static void
+Private_store_array(Loopr_Value *array, int index, Loopr_Value *value)
+{
+	if (array && array->type == LPR_ARRAY) {
+		if (index < array->u.array_value.size) {
+			array->u.array_value.value[index] = value;
+			return;
+		} else {
+			DBG_panic(("Array range error: The size of array is %d, but the given index is %d\n",
+					   array->u.array_value.size,
+					   index));
+		}
+	} else {
+		DBG_panic(("Use array method to non-array value\n"));
+	}
+	return;
 }
 
 Loopr_Value *
@@ -537,12 +599,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_LD_ARRAY: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				if (arg1 < ST(env->stack, 0)->u.array_value.size) {
-					ST(env->stack, 0) = ST(env->stack, 0)->u.array_value.value[arg1];
-				} else {
-					DBG_panic(("Array range error\n"));
-				}
-
+				ST(env->stack, 0) = Private_get_array(ST(env->stack, 0), arg1);
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
@@ -608,11 +665,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_STORE_ARRAY: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				if (arg1 < ST(env->stack, -1)->u.array_value.size) {
-					ST(env->stack, -1)->u.array_value.value[arg1] = ST(env->stack, 0);
-				} else {
-					DBG_panic(("Array range error\n"));
-				}
+				Private_store_array(ST(env->stack, -1), arg1, ST(env->stack, 0));
 				env->stack.stack_pointer -= 2;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
@@ -689,8 +742,17 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				break;
 			}
 			case LPR_INVOKE: {
-				Private_invoke_function(env, env->exe->code[pc + 1],
-										env->exe->code[pc + 1 + sizeof(Loopr_Int32)], &pc, &base);
+				Loopr_byte_deserialize(&arg1,
+						  			   &env->exe->code[pc + 2], sizeof(Loopr_Int32));
+				if(env->exe->code[pc + 1]) {
+					Loopr_byte_deserialize(&arg2,
+						  				   &env->exe->code[pc + 2 + sizeof(Loopr_Int32)], sizeof(Loopr_Int32));
+					Private_invoke_function(env, arg2, env->exe->code[pc + 2 +sizeof(Loopr_Int32) + sizeof(Loopr_Int32)],
+											arg1, &pc, &base);
+				} else {
+					Private_invoke_function(env, arg1, env->exe->code[pc + 2 + sizeof(Loopr_Int32)],
+											-1, &pc, &base);
+				}
 				break;
 			}
 			case LPR_NEW_ARRAY: {
@@ -729,7 +791,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			Walle_check_mem();
 		}
 	}
-	EXECUTE_END:;
+	EXECUTE_END:
 
 	return NULL;
 }

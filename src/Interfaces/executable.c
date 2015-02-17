@@ -74,6 +74,10 @@ ISerialize_save_exe_environment(FILE *fp, ExeEnvironment *src)
 
 	ISerialize_save_bytecode(fp, src->exe->code, src->exe->length);
 
+	for (i = 0; i < src->sub_name_space_count; i++) {
+		ISerialize_save_exe_environment(fp, src->sub_name_space[i]);
+	}
+
 	for (i = 0; i < src->function_count; i++) {
 		ISerialize_save_exe_environment(fp, src->function[i]);
 	}
@@ -107,6 +111,11 @@ ISerialize_read_exe_environment(FILE *fp)
 		if (!ret->native_function->callee) {
 			DBG_panic(("Failed to deserialize: no native function match the magic number 0x%x\n", ret->native_function->magic));
 		}
+	}
+
+	ret->sub_name_space = MEM_malloc(sizeof(ExeEnvironment) * ret->sub_name_space_count);
+	for (i = 0; i < ret->sub_name_space_count; i++) {
+		ret->sub_name_space[i] = ISerialize_read_exe_environment(fp);
 	}
 
 	ret->function = MEM_malloc(sizeof(ExeEnvironment) * ret->function_count);

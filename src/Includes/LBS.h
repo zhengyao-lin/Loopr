@@ -188,9 +188,20 @@ typedef struct CallInfo_tag {
 	LocalVariableMap *local_list;
 } CallInfo;
 
+typedef struct LabelContainer_tag {
+	int dest;
+	char *identifier;
+
+	int ref_count;
+	int *ref;
+	struct LabelContainer_tag *next;
+} LabelContainer;
+
 typedef struct ByteContainer_tag {
 	char *name;
 	Loopr_Boolean is_void;
+
+	LabelContainer *label_header;
 
 	Loopr_Size next;
 	Loopr_Size alloc_size;
@@ -203,6 +214,9 @@ typedef struct ByteContainer_tag {
 
 	Loopr_Size local_variable_count;
 	LocalVariable *local_variable;
+
+	Loopr_Size sub_name_space_count;
+	struct ByteContainer_tag **sub_name_space;
 
 	Loopr_Size function_count;
 	struct ByteContainer_tag **function;
@@ -240,6 +254,9 @@ typedef struct ExeEnvironment_tag {
 	LocalVariableMap *local_variable_map;
 
 	struct NativeFunction_tag *native_function;
+
+	Loopr_Size sub_name_space_count;
+	struct ExeEnvironment_tag **sub_name_space;
 
 	Loopr_Size function_count;
 	struct ExeEnvironment_tag **function;

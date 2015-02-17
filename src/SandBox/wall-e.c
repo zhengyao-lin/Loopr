@@ -166,6 +166,10 @@ Walle_dispose_environment(ExeEnvironment *env)
 {
 	int i;
 
+	if (!env) {
+		return;
+	}
+
 	Walle_dispose_exe_container(env->exe);
 	if (env->stack.value) {
 		MEM_free(env->stack.value);
@@ -175,11 +179,18 @@ Walle_dispose_environment(ExeEnvironment *env)
 	}
 	MEM_free(env->local_variable_map);
 
+	for (i = 0; i < env->sub_name_space_count; i++) {
+		Walle_dispose_environment(env->sub_name_space[i]);
+
+	}
+	MEM_free(env->sub_name_space);
+
 	for (i = 0; i < env->function_count; i++) {
 		Walle_dispose_environment(env->function[i]);
 
 	}
 	MEM_free(env->function);
+
 	MEM_free(env);
 
 	return;
@@ -189,15 +200,25 @@ void
 Walle_dispose_byte_container(ByteContainer *env, Loopr_Boolean flag_clean_code)
 {
 	int i;
+	
+	if (!env) {
+		return;
+	}
 
 	if (env->name) {
 		MEM_free(env->name);
 	}
 
+	for (i = 0; i < env->sub_name_space_count; i++) {
+		Walle_dispose_byte_container(env->sub_name_space[i], flag_clean_code);
+	}
+	MEM_free(env->sub_name_space);
+
 	for (i = 0; i < env->function_count; i++) {
 		Walle_dispose_byte_container(env->function[i], flag_clean_code);
 	}
 	MEM_free(env->function);
+
 	if (flag_clean_code) {
 		MEM_free(env->code);
 	}

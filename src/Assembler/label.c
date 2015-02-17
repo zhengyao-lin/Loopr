@@ -5,22 +5,10 @@
 #include "SandBox_pri.h"
 #include "Assembler.h"
 
-static LabelContainer *backup = NULL;
-static LabelContainer *header = NULL;
-static ByteContainer *env_backup = NULL;
-static ByteContainer *current_env = NULL;
-
 void
 Label_init(ByteContainer *env)
 {
-	if (header) {
-		backup = header;
-	}
-	if (current_env) {
-		env_backup = current_env;
-	}
-	header = NULL;
-	current_env = env;
+	env->label_header = NULL;
 	return;
 }
 
@@ -40,13 +28,13 @@ Label_alloc(char *identifier)
 }
 
 void
-Label_add(char *identifier, int dest)
+Label_add(ByteContainer *env, char *identifier, int dest)
 {
 	LabelContainer *new_l;
 	LabelContainer *pos;
 
-	if (header) {
-		for (pos = header; pos; pos = pos->next) {
+	if (env->label_header) {
+		for (pos = env->label_header; pos; pos = pos->next) {
 			if (!strcmp(pos->identifier, identifier) && pos->dest == -1) {
 				pos->dest = dest;
 				return;
@@ -58,8 +46,8 @@ Label_add(char *identifier, int dest)
 			}
 		}
 	} else {
-		header = Label_alloc(identifier);
-		header->dest = dest;
+		env->label_header = Label_alloc(identifier);
+		env->label_header->dest = dest;
 	}
 
 	return;
@@ -74,12 +62,12 @@ Label_alloc_ref(LabelContainer *dest, int pc)
 }
 
 void
-Label_ref(char *identifier, int pc)
+Label_ref(ByteContainer *env, char *identifier, int pc)
 {
 	LabelContainer *pos;
 	LabelContainer *last = NULL;
 
-	for (pos = header; pos; pos = pos->next) {
+	for (pos = env->label_header; pos; pos = pos->next) {
 		if (!strcmp(pos->identifier, identifier)) {
 			Label_alloc_ref(pos, pc);
 			return;
@@ -87,23 +75,23 @@ Label_ref(char *identifier, int pc)
 		last = pos;
 	}
 
-	Label_add(identifier, -1);
+	Label_add(env, identifier, -1);
 	Label_alloc_ref(last && last->next ?
-					last->next : header, pc);
+					last->next : env->label_header, pc);
 	return;
 }
 
 void
-Label_set_all()
+Label_set_all(ByteContainer *env)
 {
 	int i;
 	LabelContainer *pos;
 	LabelContainer *last = NULL;
 
-	for (pos = header; pos; last = pos, pos = pos->next, ASM_free(last)) {
+	for (pos = env->label_header; pos; last = pos, pos = pos->next, ASM_free(last)) {
 		for (i = 0; i < pos->ref_count; i++) {
 			if (pos->dest > 0) {
-				memcpy(&current_env->code[pos->ref[i]],
+				memcpy(&env->code[pos->ref[i]],
 					   &pos->dest, sizeof(Loopr_Int32));
 			} else {
 				DBG_panic(("Cannot find label by name \"%s\"\n", pos->identifier));
@@ -112,6 +100,6 @@ Label_set_all()
 		MEM_free(pos->identifier);
 		ASM_free(pos->ref);
 	}
-	header = (backup ? backup : NULL);
-	current_env = (env_backup ? env_backup : NULL);
+
+	return;
 }

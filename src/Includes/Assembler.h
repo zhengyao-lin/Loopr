@@ -29,6 +29,7 @@ typedef enum {
 
 	CONST_STRING,
 	CONST_LABEL,
+	CONST_PACKAGE_NAME,
 
 	CONST_BLOCK,
 	CONST_KEYWORD,
@@ -42,10 +43,16 @@ typedef enum {
 	ASM_KEYWORD_PLUS_1
 } KeyWord;
 
+typedef struct PackageName_tag {
+	char *name;
+	struct PackageName_tag *next;
+} PackageName;
+
 typedef struct Constant_tag {
 	ConstantType type;
 	union {
 		char						*string_value;
+		PackageName					*package_name_value;
 
 		KeyWord						keyword_value;
 		Loopr_Char					char_value;
@@ -95,23 +102,22 @@ typedef struct FunctionDefinition_tag {
 	Loopr_Boolean is_void;
 } FunctionDefinition;
 
-typedef struct Asm_Compiler_tag {
+typedef struct NameSpace_tag {
+	char *name;
 	StatementList *top_level;
-
 	int function_count;
 	FunctionDefinition *function_definition;
+} NameSpace;
+
+typedef struct Asm_Compiler_tag {
+	char *default_name_space;
+
+	int current_name_space_index;
+	int name_space_count;
+	NameSpace *name_space;
 
 	int current_line_number;
 } Asm_Compiler;
-
-typedef struct LabelContainer_tag {
-	int dest;
-	char *identifier;
-
-	int ref_count;
-	int *ref;
-	struct LabelContainer_tag *next;
-} LabelContainer;
 
 #define GET_BIT(num, type) \
 	((num) << (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8 \
@@ -122,11 +128,11 @@ typedef struct LabelContainer_tag {
 
 /* label.c */
 void Label_init(ByteContainer *env);
-LabelContainer *Label_alloc(char *identifier);
-void Label_add(char *identifier, int dest);
+LabelContainer * Label_alloc(char *identifier);
+void Label_add(ByteContainer *env, char *identifier, int dest);
 void Label_alloc_ref(LabelContainer *dest, int pc);
-void Label_ref(char *identifier, int pc);
-void Label_set_all();
+void Label_ref(ByteContainer *env, char *identifier, int pc);
+void Label_set_all(ByteContainer *env);
 
 /* interface.c */
 void Asm_set_current_compiler(Asm_Compiler *compiler);
@@ -148,6 +154,9 @@ StatementList *Asm_create_statement_list(Statement *st);
 StatementList *Asm_cat_statement_list(StatementList *list, StatementList *addin);
 StatementList *Asm_chain_statement_list(Statement *st, StatementList *list);
 Constant *Asm_create_block(StatementList *list);
+void Asm_begin_namespace(char *name);
+PackageName *Asm_create_package_name(char *name);
+PackageName *Asm_chain_package_name(char *name, PackageName *list);
 
 /* string.c */
 void Asm_open_string_literal(void);

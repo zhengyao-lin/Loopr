@@ -180,8 +180,9 @@ Walle_dispose_environment(ExeEnvironment *env)
 	MEM_free(env->local_variable_map);
 
 	for (i = 0; i < env->sub_name_space_count; i++) {
-		Walle_dispose_environment(env->sub_name_space[i]);
-
+		if (env->sub_name_space[i] != env) {
+			Walle_dispose_environment(env->sub_name_space[i]);
+		}
 	}
 	MEM_free(env->sub_name_space);
 
@@ -210,7 +211,9 @@ Walle_dispose_byte_container(ByteContainer *env, Loopr_Boolean flag_clean_code)
 	}
 
 	for (i = 0; i < env->sub_name_space_count; i++) {
-		Walle_dispose_byte_container(env->sub_name_space[i], flag_clean_code);
+		if (env->sub_name_space[i] != env) {
+			Walle_dispose_byte_container(env->sub_name_space[i], flag_clean_code);
+		}
 	}
 	MEM_free(env->sub_name_space);
 

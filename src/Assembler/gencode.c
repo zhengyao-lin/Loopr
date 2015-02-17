@@ -503,17 +503,22 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			Coding_push_code(env, code, NULL, 0);
 			if (list->constant->type == CONST_STRING
 				|| list->constant->type == CONST_LABEL) {
-				Coding_push_one_byte(env, LPR_False);
+				index = compiler->current_name_space_index;
+				Coding_push_code(env, LPR_NULL_CODE,
+								 &index,
+								 sizeof(Loopr_Int32));
+
 				index = Gencode_get_function_index(env, list->constant->u.string_value);
 				argc = list->constant->next->u.int32_value;
 			} else if (list->constant->type == CONST_PACKAGE_NAME) {
-				Coding_push_one_byte(env, LPR_True);
 				index = Gencode_search_name_space_index(list->constant->u.package_name_value->name);
 				Coding_push_code(env, LPR_NULL_CODE,
 								 &index,
 								 sizeof(Loopr_Int32));
+
 				ns = &compiler->name_space[index];
 				index = Gencode_get_function_index_name_space(env, list->constant->next->u.string_value, index);
+				argc = list->constant->next->next->u.int32_value;
 			}
 
 			Coding_push_code(env, LPR_NULL_CODE,
@@ -623,11 +628,13 @@ Gencode_compile(Asm_Compiler *compiler)
 	container->sub_name_space_count = compiler->name_space_count;
 	container->sub_name_space = MEM_malloc(sizeof(ByteContainer) * compiler->name_space_count);
 	for (i = 0; i < compiler->name_space_count; i++) {
-		container->sub_name_space[i] = Coding_init_coding_env();
 		if (i != default_index) {
 			compiler->current_name_space_index = i;
+			container->sub_name_space[i] = Coding_init_coding_env();
 			Gencode_statement_list(container->sub_name_space[i],
 								   compiler->name_space[i].top_level);
+		} else {
+			container->sub_name_space[i] = container;
 		}
 	}
 

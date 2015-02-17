@@ -204,7 +204,11 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	if (env->sub_name_space_count > 0) {
 		ret->sub_name_space = MEM_malloc(sizeof(ExeEnvironment *) * ret->sub_name_space_count);
 		for (i = 0; i < env->sub_name_space_count; i++) {
-			ret->sub_name_space[i] = Coding_init_exe_env(env->sub_name_space[i], wflag);
+			if (env->sub_name_space[i] != env) {
+				ret->sub_name_space[i] = Coding_init_exe_env(env->sub_name_space[i], wflag);
+			} else {
+				ret->sub_name_space[i] = ret;
+			}
 		}
 	}
 

@@ -186,9 +186,6 @@ typedef struct CallInfo_tag {
 
 	Loopr_Size base;
 	LocalVariableMap *local_list;
-
-	Loopr_Size function_count;
-	struct ExeEnvironment_tag **function;
 } CallInfo;
 
 typedef struct LabelContainer_tag {

@@ -38,6 +38,7 @@ translation_unit
 	;
 namespace_unit
 	: namespace_begin top_level_unit namespace_end
+	| namespace_begin namespace_end
 	| DEFAULT IDENTIFIER NEXT_LINE
 	{
 		Asm_Compiler *current_compiler;
@@ -55,7 +56,7 @@ namespace_begin
 	}
 	;
 namespace_end
-	: RC
+	: next_line_list_opt RC
 	;
 top_level_unit
 	: next_line_list_opt statement_list next_line_list_opt

@@ -3,11 +3,18 @@ namespace SubMain {
 	.function void non_function2() {
 		ldstr "yes!!!"
 		popstr
+		invoke <SubMain2>non_function2, 0
 	}
 	.function void non_function() {
 		ldstr "hello, world!!!"
 		popstr
 		invoke non_function2, 0
+	}
+}
+namespace SubMain2 {
+	.function void non_function2() {
+		ldstr "haha!!!"
+		popstr
 	}
 }
 namespace Main {
@@ -41,7 +48,9 @@ namespace Main {
 		ldstr "\n"
 		ldloc str
 		invoke print, 1
+
 		invoke print, 1
+		invoke <SubMain>non_function, 0
 		ret
 	}
 
@@ -49,7 +58,6 @@ namespace Main {
 	invoke println, 1
 	ldstr "issue a character: \n"
 	invoke print, 1
-	invoke <SubMain>non_function, 0
 	//invoke getc, 0
 	//popb
 

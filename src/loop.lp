@@ -1,8 +1,13 @@
 default Main
 namespace SubMain {
+	.function void non_function2() {
+		ldstr "yes!!!"
+		popstr
+	}
 	.function void non_function() {
 		ldstr "hello, world!!!"
 		popstr
+		invoke non_function2, 0
 	}
 }
 namespace Main {
@@ -42,7 +47,7 @@ namespace Main {
 
 	ldstr "你好"
 	invoke println, 1
-	ldstr "issue a character: "
+	ldstr "issue a character: \n"
 	invoke print, 1
 	invoke <SubMain>non_function, 0
 	//invoke getc, 0

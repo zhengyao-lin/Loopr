@@ -283,14 +283,15 @@ Private_invoke_function(ExeEnvironment *env, int index, int argc, int name_space
 	CallInfo *call_info;
 	ExeEnvironment *callee;
 
-	outer = Private_get_top_level();
 	if (name_space >= 0) {
-		callee = outer->sub_name_space[name_space]->function[index];
+		outer = Private_get_top_level()->sub_name_space[name_space];
 		*pc_p += 3 + sizeof(Loopr_Int32) + sizeof(Loopr_Int32);
 	} else {
-		callee = outer->function[index];
+		outer = Private_get_top_level();
 		*pc_p += 3 + sizeof(Loopr_Int32);
 	}
+
+	callee = outer->function[index];
 
 	if (callee->native_function) {/* is native function */
 		env->stack.stack_pointer -= argc;
@@ -312,6 +313,9 @@ Private_invoke_function(ExeEnvironment *env, int index, int argc, int name_space
 	call_info->base = *base_p;
 	call_info->local_list = env->local_variable_map;
 
+	call_info->function_count = env->function_count;
+	call_info->function = env->function;
+
 	/* reset stack */
 	env->stack.stack_pointer -= argc - 1;
 	*base_p = env->stack.stack_pointer;
@@ -319,6 +323,9 @@ Private_invoke_function(ExeEnvironment *env, int index, int argc, int name_space
 	/* invoke */
 	env->local_variable_map = Private_init_arguments(callee->local_variable_map->count);
 	env->local_variable_map->prev = call_info->local_list;
+
+	env->function_count = outer->function_count;
+	env->function = outer->function;
 
 	for (pri_i = 0; pri_i < argc; pri_i++) {
 		Private_assign_local_variable(env, pri_i, ST_i(env->stack, *base_p + pri_i));
@@ -348,6 +355,9 @@ Private_do_return(ExeEnvironment *env, int *pc_p, int *base_p)
 	Private_dispose_arguments(env->local_variable_map);
 
 	env->local_variable_map = call_info->local_list;
+	env->function_count = call_info->function_count;
+	env->function = call_info->function;
+
 	free(call_info);
 
 	return ret_value;

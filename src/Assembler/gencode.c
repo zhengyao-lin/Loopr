@@ -38,6 +38,7 @@ ByteInfo Loopr_CR_Info[] = {
 	{"maxstack",		0,	0},
 	{"function",		0,	0},
 	{"def",				0,	0},
+	{"using",			0,	0},
 };
 
 static Loopr_Byte
@@ -372,7 +373,7 @@ Gencode_get_function_index_name_space(ByteContainer *env, char *name, int ns_ind
 		}
 	}
 
-	DBG_panic(("Undefined function \"%s\"\n", name));
+	/* DBG_panic(("Undefined function \"%s\"\n", name)); */
 
 	return -1;
 }
@@ -381,6 +382,49 @@ static int
 Gencode_get_function_index(ByteContainer *env, char *name)
 {
 	return Gencode_get_function_index_name_space(env, name, Asm_get_current_compiler()->current_name_space_index);
+}
+
+static int
+Gencode_search_name_space_index(char *identifier)
+{
+	int i;
+	Asm_Compiler *current_compiler;
+
+	if (identifier == NULL) {
+		return 0;
+	}
+
+	current_compiler = Asm_get_current_compiler();
+	for (i = 0; i < current_compiler->name_space_count; i++) {
+		if (!strcmp(current_compiler->name_space[i].name, identifier)) {
+			return i;
+		}
+	}
+
+	DBG_panic(("Cannot find namespace by identifier \"%s\"\n", identifier));
+
+	return -1;
+}
+
+static void
+Gencode_add_using(ByteContainer *env, char *name)
+{
+	UsingList *new_using;
+	UsingList *pos;
+
+	for (pos = env->using_list; pos && pos->next; pos = pos->next);
+
+	new_using = ASM_malloc(sizeof(UsingList));
+	new_using->name_space = Gencode_search_name_space_index(name);
+	new_using->next = NULL;
+
+	if (pos) {
+		pos->next = new_using;
+	} else {
+		env->using_list = new_using;
+	}
+
+	return;
 }
 
 static void
@@ -414,6 +458,13 @@ Gencode_compiler_reference(ByteContainer *env, Statement *list)
 			}
 			index = Coding_init_local_variable(env, list->constant->u.string_value);
 			break;
+		case LCR_USING:
+			if (list->constant->type != CONST_STRING
+				&& list->constant->type != CONST_LABEL) {
+				DBG_panic(("line %d: using name can only be a label or string\n", list->line_number));
+			}
+			Gencode_add_using(env, list->constant->u.string_value);
+			break;
 		default:
 			DBG_panic(("line %d: Unknown CR code \"%s\"\n", list->line_number,
 															list->bytecode->next->name));
@@ -425,26 +476,50 @@ Gencode_compiler_reference(ByteContainer *env, Statement *list)
 	ASM_free(list);
 }
 
-static int
-Gencode_search_name_space_index(char *identifier)
+static Loopr_Boolean
+Gencode_is_void(int ns, int index)
 {
-	int i;
-	Asm_Compiler *current_compiler;
+	return Asm_get_current_compiler()->name_space[ns].function_definition[index].is_void;
+}
 
-	if (identifier == NULL) {
-		return 0;
+static void
+Gencode_fix_function_invoke(ByteContainer *env, PackageName *pkgn, char *name, int argc)
+{
+	Asm_Compiler *compiler = Asm_get_current_compiler();
+	UsingList *pos;
+	int name_space = compiler->current_name_space_index;
+	int index;
+
+	if (pkgn) {
+		name_space = Gencode_search_name_space_index(pkgn->name);
 	}
 
-	current_compiler = Asm_get_current_compiler();
-	for (i = 0; i < current_compiler->name_space_count; i++) {
-		if (!strcmp(current_compiler->name_space[i].name, identifier)) {
-			return i;
+	index = Gencode_get_function_index_name_space(env, name, name_space);
+	if (index < 0) {
+		for (pos = env->using_list; pos; pos = pos->next) {
+			if ((index = Gencode_get_function_index_name_space(env, name, pos->name_space)) >= 0) {
+				break;
+			}
 		}
+		if (index < 0) {
+			DBG_panic(("Undefined function \"%s\"\n", name));
+		}
+		return;
 	}
 
-	DBG_panic(("Cannot find namespace by identifier \"%s\"\n", identifier));
+	Coding_push_code(env, LPR_INVOKE, NULL, 0);
+	Coding_push_code(env, LPR_NULL_CODE,
+					 &name_space,
+					 sizeof(Loopr_Int32));
+	Coding_push_code(env, LPR_NULL_CODE,
+					 (Loopr_Byte *)&index,
+					 sizeof(Loopr_Int32));
+	Coding_push_one_byte(env, argc);
+	if (Gencode_is_void(name_space, index)) {
+		Coding_push_code(env, LPR_POP, NULL, 0);
+	}
 
-	return -1;
+	return;
 }
 
 static void
@@ -500,33 +575,14 @@ Gencode_statement(ByteContainer *env, Statement *list)
 							 sizeof(Loopr_Int32));
 			break;
 		case LPR_INVOKE:
-			Coding_push_code(env, code, NULL, 0);
-			if (list->constant->type == CONST_STRING
-				|| list->constant->type == CONST_LABEL) {
-				index = compiler->current_name_space_index;
-				Coding_push_code(env, LPR_NULL_CODE,
-								 &index,
-								 sizeof(Loopr_Int32));
-
-				index = Gencode_get_function_index(env, list->constant->u.string_value);
-				argc = list->constant->next->u.int32_value;
-			} else if (list->constant->type == CONST_PACKAGE_NAME) {
-				index = Gencode_search_name_space_index(list->constant->u.package_name_value->name);
-				Coding_push_code(env, LPR_NULL_CODE,
-								 &index,
-								 sizeof(Loopr_Int32));
-
-				ns = &compiler->name_space[index];
-				index = Gencode_get_function_index_name_space(env, list->constant->next->u.string_value, index);
-				argc = list->constant->next->next->u.int32_value;
-			}
-
-			Coding_push_code(env, LPR_NULL_CODE,
-							 (Loopr_Byte *)&index,
-							 sizeof(Loopr_Int32));
-			Coding_push_one_byte(env, argc);
-			if (ns->function_definition[index].is_void) {
-				Coding_push_code(env, LPR_POP, NULL, 0);
+			if (list->constant->type == CONST_PACKAGE_NAME) {
+				Gencode_fix_function_invoke(env, list->constant->u.package_name_value,
+											Gencode_get_constant_by_index(list->constant, 1)->u.string_value,
+											Gencode_get_constant_by_index(list->constant, 2)->u.int32_value);
+			} else {
+				Gencode_fix_function_invoke(env, NULL,
+											Gencode_get_constant_by_index(list->constant, 0)->u.string_value,
+											Gencode_get_constant_by_index(list->constant, 1)->u.int32_value);
 			}
 			break;
 		case LPR_BRANCH:

@@ -19,6 +19,7 @@ namespace SubMain2 {
 }
 namespace Main {
 	.entry
+	.using SubMain
 
 	goto __TRIMUL_END //jump throw function
 	__TRIMUL: //Macro, multiply the last three stacks
@@ -43,23 +44,28 @@ namespace Main {
 
 	.function void hello()
 	.function void print(str)
-	.function getc()
+	.function gets()
 	.function void println(str) {
 		ldstr "\n"
 		ldloc str
 		invoke print, 1
 
 		invoke print, 1
-		invoke <SubMain>non_function, 0
+		invoke non_function, 0
 		ret
 	}
 
 	ldstr "你好"
 	invoke println, 1
-	ldstr "issue a character: \n"
+	ldstr "issue a command: "
 	invoke print, 1
-	//invoke getc, 0
-	//popb
+
+	ldstr "\""
+	invoke gets, 0
+	addstr
+	ldstr "\"? what dose that mean?\n"
+	addstr
+	invoke println, 1
 
 	.function TRIMUL(first, second, third) {
 		.def var

@@ -60,6 +60,10 @@ void
 Asm_clean_local_env(ByteContainer *env)
 {
 	int i;
+	UsingList *pos;
+
+	for (; env->using_list;
+		 pos = env->using_list, env->using_list = env->using_list->next, ASM_free(pos));
 
 	for (i = 0; i < env->local_variable_count; i++) {
 		if (env->local_variable[i].identifier) {

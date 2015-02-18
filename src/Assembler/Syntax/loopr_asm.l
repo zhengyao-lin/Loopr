@@ -123,8 +123,8 @@ Loopr_Boolean st_character_literal_state;
 %start C_COMMENT CC_COMMENT STRING_LITERAL_STATE
 %%
  /* Punctuations */
-<INITIAL>"default"	return DEFAULT;
 <INITIAL>"namespace"	return NAMESPACE;
+<INITIAL>"default"	return DEFAULT;
 <INITIAL>"void" {
 	Constant *constant;
 	constant = Asm_alloc_constant(CONST_KEYWORD);

@@ -60,6 +60,10 @@ Coding_init_coding_env(void)
 	env = MEM_malloc(sizeof(ByteContainer));
 	env->name = NULL;
 	env->is_void = LPR_False;
+
+	env->label_header = NULL;
+	env->using_list = NULL;
+
 	env->next = 0;
 	env->alloc_size = 0;
 	env->hinted = LPR_False;

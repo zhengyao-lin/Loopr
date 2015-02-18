@@ -56,6 +56,7 @@ typedef enum {
 	LCR_MAX_STACK,
 	LCR_FUNCTION,
 	LCR_DEFINE,
+	LCR_USING,
 	LCR_CODE_PLUS_1
 } LooprCodeCompilerReference;
 
@@ -197,26 +198,32 @@ typedef struct LabelContainer_tag {
 	struct LabelContainer_tag *next;
 } LabelContainer;
 
+typedef struct UsingList_tag {
+	int name_space;
+	struct UsingList_tag *next;
+} UsingList;
+
 typedef struct ByteContainer_tag {
-	char *name;
-	Loopr_Boolean is_void;
+	char							*name;
+	Loopr_Boolean					is_void;
 
-	LabelContainer *label_header;
+	LabelContainer					*label_header;
+	UsingList						*using_list;
 
-	Loopr_Size next;
-	Loopr_Size alloc_size;
+	Loopr_Size						next;
+	Loopr_Size						alloc_size;
 
-	Loopr_Boolean hinted:1;
-	Loopr_Size stack_size;
+	Loopr_Boolean					hinted:1;
+	Loopr_Size						stack_size;
 
-	Loopr_Size entrance;
-	Loopr_Byte *code;
+	Loopr_Size						entrance;
+	Loopr_Byte						*code;
 
-	Loopr_Size local_variable_count;
-	LocalVariable *local_variable;
+	Loopr_Size						local_variable_count;
+	LocalVariable					*local_variable;
 
-	Loopr_Size sub_name_space_count;
-	struct ByteContainer_tag **sub_name_space;
+	Loopr_Size						sub_name_space_count;
+	struct ByteContainer_tag		**sub_name_space;
 
 	Loopr_Size function_count;
 	struct ByteContainer_tag **function;

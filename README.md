@@ -1,2 +1,2 @@
 # Loopr
-A Java-like Virtual Machine
+The Loopr Virtual Machine

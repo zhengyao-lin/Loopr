@@ -12,9 +12,11 @@ typedef enum {
 	LPR_NULL_CODE = 0,
 
 	LPR_LD_BYTE = 1,
+	LPR_LD_CONST,
 	LPR_LD_NULL,
 	LPR_LD_STRING,
 	LPR_LD_LOC,
+	LPR_LD_ARG,
 	LPR_LD_ARRAY,
 
 	LPR_CONVERT,
@@ -186,6 +188,7 @@ typedef struct CallInfo_tag {
 	ExeContainer *caller;
 
 	Loopr_Size base;
+	Loopr_Size stack_pointer;
 	LocalVariableMap *local_list;
 } CallInfo;
 

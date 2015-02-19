@@ -1,24 +1,24 @@
 namespace Main {
-	.function Recursive(n, m) {
-		ldloc n
+	.function Recursive {
+		ldarg.0
 		br.1 {
-			ldloc m
+			ldarg.1
 			ret
 		}
 
-		ldloc m
+		ldarg.1
 		br.1 {
-			ldloc n
+			ldarg.0
 			ret
 		}
 
-		ldloc n
+		ldarg.0
 		dec
-		ldloc m
+		ldarg.1
 		invoke "Recursive", 2
 
-		ldloc n
-		ldloc m
+		ldarg.0
+		ldarg.1
 		dec
 		invoke "Recursive", 2
 
@@ -26,8 +26,8 @@ namespace Main {
 		ret
 	}
 
-	ldb 10
-	ldb 10
+	ldc.15
+	ldc.10
 	invoke "Recursive", 2
 	popb
 }

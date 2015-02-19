@@ -301,11 +301,12 @@ Gencode_function(ByteContainer *env, Constant *arguments)
 	}
 
 	arguments = arguments->next;
-	for (pos = arguments;
+	for (i = 0, pos = arguments;
 		 pos && (pos->type == CONST_STRING || pos->type == CONST_LABEL);
-		 pos = pos->next) {
-		Coding_init_local_variable(new_func, pos->u.string_value);
+		 pos = pos->next, i++) {
+		/*Coding_init_local_variable(new_func, pos->u.string_value);*/
 	}
+	env->stack_size += i;
 
 	if (!pos) { /* function signed */
 		if (!(new_func->native_function = Native_search_function_by_name(name))) {

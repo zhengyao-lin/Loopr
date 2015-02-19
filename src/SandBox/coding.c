@@ -7,9 +7,11 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"dummy",	0,	0},
 
 	{"ldb",		0,	1},
+	{"ldc",		0,	1},
 	{"ldnull",	0,	1},
 	{"ldstr",	0,	1},
 	{"ldloc",	0,	1},
+	{"ldarg",	0,	1},
 	{"ldarr",	1,	0},
 
 	{"conv",	1,	0},

@@ -47,7 +47,7 @@ namespace Main {
 	.function gets()
 	.function void println(str) {
 		ldstr "\n"
-		ldloc str
+		ldarg.0
 		invoke print, 1
 
 		invoke print, 1
@@ -70,9 +70,9 @@ namespace Main {
 
 	.function TRIMUL(first, second, third) {
 		.def var
-		ldloc first
-		ldloc second
-		ldloc third
+		ldarg.0
+		ldarg.1
+		ldarg.2
 		mul
 		mul
 
@@ -85,7 +85,7 @@ namespace Main {
 	}
 
 	.function BoolToString(bvalue) {
-		ldloc bvalue
+		ldarg.0
 		br.true {
 			ldstr "true"
 			ret
@@ -95,7 +95,7 @@ namespace Main {
 	}
 
 	.function void Printk(str) {
-		ldloc str
+		ldarg.0
 		popstr
 		ret
 		//.function void non_function(){}
@@ -160,4 +160,17 @@ namespace Main {
 	/*ldb.bl true
 	conv.str
 	popstr*/
+
+	ldb 10
+	ldb 10
+	ne
+	br.true IS_TRUE
+	ldstr "it's false!"
+	invoke println, 1
+	goto END
+
+IS_TRUE:
+	ldstr "it's true!"
+	invoke println, 1
+END:
 }

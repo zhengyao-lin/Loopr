@@ -197,7 +197,11 @@ Private_init_arguments(int argc)
 
 	ret = MEM_malloc(sizeof(LocalVariableMap));
 	ret->count = argc;
-	ret->variable = MEM_malloc(sizeof(LocalVariable) * ret->count);
+	if (argc > 0) {
+		ret->variable = MEM_malloc(sizeof(LocalVariable) * ret->count);
+	} else {
+		ret->variable = NULL;
+	}
 	ret->prev = NULL;
 
 	return ret;
@@ -206,7 +210,9 @@ Private_init_arguments(int argc)
 static void
 Private_dispose_arguments(LocalVariableMap *map)
 {
-	MEM_free(map->variable);
+	if (map->variable) {
+		MEM_free(map->variable);
+	}
 	MEM_free(map);
 	return;
 }
@@ -219,10 +225,7 @@ Private_invoke_function(ExeEnvironment *env, int name_space, int index, int argc
 	CallInfo *call_info;
 	ExeEnvironment *callee;
 
-	if (!(outer = Private_get_top_level()->sub_name_space[name_space])) {
-		outer = Private_get_top_level();
-	}
-
+	outer = Private_get_top_level()->sub_name_space[name_space];
 	callee = outer->function[index];
 	*pc_p += 2 + sizeof(Loopr_Int32) + sizeof(Loopr_Int32);
 
@@ -242,21 +245,23 @@ Private_invoke_function(ExeEnvironment *env, int name_space, int index, int argc
 	call_info->pc = *pc_p;
 	call_info->caller = env->exe;
 
-	Private_expand_stack(&env->stack, callee->stack.alloc_size);
 	call_info->base = *base_p;
+	call_info->stack_pointer = env->stack.stack_pointer - argc;
 	call_info->local_list = env->local_variable_map;
 
 	/* reset stack */
-	env->stack.stack_pointer -= argc - 1;
-	*base_p = env->stack.stack_pointer;
+	env->stack.stack_pointer -= argc;
+	Private_expand_stack(&env->stack, callee->stack.alloc_size);
+	*base_p = env->stack.stack_pointer + argc + 1;
+	env->stack.stack_pointer = *base_p;
 
 	/* invoke */
 	env->local_variable_map = Private_init_arguments(callee->local_variable_map->count);
 	env->local_variable_map->prev = call_info->local_list;
 
-	for (pri_i = 0; pri_i < argc; pri_i++) {
+	/*for (pri_i = 0; pri_i < argc; pri_i++) {
 		Private_assign_local_variable(env, pri_i, ST_i(env->stack, *base_p + pri_i), ST_flag_i(env->stack, *base_p + pri_i));
-	}
+	}*/
 
 	env->stack.value[*base_p].call_info = call_info;
 	env->stack.ref_flag[*base_p] = LPR_False;
@@ -277,8 +282,7 @@ Private_do_return(ExeEnvironment *env, int *pc_p, int *base_p)
 	ret_value = env->stack.value[env->stack.stack_pointer];
 	flag = env->stack.ref_flag[env->stack.stack_pointer];
 
-	env->stack.stack_pointer = *base_p - 1;
-
+	env->stack.stack_pointer = call_info->stack_pointer;
 	env->exe = call_info->caller;
 	*pc_p = call_info->pc;
 	*base_p = call_info->base;
@@ -532,6 +536,13 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc += 2 + arg1;
 				break;
 			}
+			case LPR_LD_CONST: {
+				ST_INTEGER(env->stack, 1) = env->exe->code[pc + 1];
+				ST_flag(env->stack, 1) = LPR_False;
+				env->stack.stack_pointer++;
+				pc += 2;
+				break;
+			}
 			case LPR_LD_NULL: {
 				ST_REF(env->stack, 1) = Loopr_create_null();
 				env->stack.stack_pointer++;
@@ -551,6 +562,13 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				ST(env->stack, 1) = Private_load_local_variable(env, arg1, &ST_flag(env->stack, 1));
 				env->stack.stack_pointer++;
 				pc += 1 + sizeof(Loopr_Int32);
+				break;
+			}
+			case LPR_LD_ARG: {
+				ST(env->stack, 1) = ST_i(env->stack, base - env->exe->code[pc + 1] - 1);
+				ST_flag(env->stack, 1) = ST_flag_i(env->stack, base - env->exe->code[pc + 1] - 1);
+				env->stack.stack_pointer++;
+				pc += 2;
 				break;
 			}
 			case LPR_LD_ARRAY: {
@@ -616,6 +634,34 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
+			case LPR_EQUAL: {
+				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) == ST_INTEGER(env->stack, 0));
+				ST_flag(env->stack, -1) = LPR_False;
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_NOT_EQUAL: {
+				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) != ST_INTEGER(env->stack, 0));
+				ST_flag(env->stack, -1) = LPR_False;
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_GREATER_THAN: {
+				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) > ST_INTEGER(env->stack, 0));
+				ST_flag(env->stack, -1) = LPR_False;
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_LESS_THAN: {
+				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) < ST_INTEGER(env->stack, 0));
+				ST_flag(env->stack, -1) = LPR_False;
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
 			case LPR_BRANCH: {
 				if (env->exe->code[pc + 1] == (ST_INTEGER(env->stack, 0) == env->exe->code[pc + 2])) {
 					Loopr_byte_deserialize(&pc, &env->exe->code[pc + 3], sizeof(Loopr_Int32));
@@ -627,7 +673,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			}
 			case LPR_DUPLICATE: {
 				ST(env->stack, 1) = ST(env->stack, -env->exe->code[pc + 1]);
-				ST_flag(env->stack, 1) = ST_flag(env->stack, 0);
+				ST_flag(env->stack, 1) = ST_flag(env->stack, -env->exe->code[pc + 1]);
 				env->stack.stack_pointer++;
 				pc += 2;
 				break;

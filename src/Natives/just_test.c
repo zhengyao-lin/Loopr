@@ -3,49 +3,44 @@
 #include "MEM.h"
 #include "DBG.h"
 
-Loopr_Value *
-proc_hello_world(ExeEnvironment *env, int argc, Loopr_Value **argv)
+Loopr_Value
+proc_hello_world(ExeEnvironment *env, int argc, Loopr_Value *argv)
 {
 	printf("hello, world!\n");
-	return NULL;
+	return NULL_REF;
 }
 
-Loopr_Value *
-proc_print(ExeEnvironment *env, int argc, Loopr_Value **argv)
+Loopr_Value
+proc_print(ExeEnvironment *env, int argc, Loopr_Value *argv)
 {
 	if (argc < 1) {
 		DBG_panic(("Native: print: Arguments less than one"));
 	}
 
-	if (argv[0] && argv[0]->type == LPR_STRING) {
-		printf("%ls", argv[0]->u.string_value);
-	} else {
-		DBG_panic(("Native: print: Incorrect argument"));
-	}
+	printf("%ls", argv[0].ref_value->u.string_value);
 
-	return NULL;
+	return NULL_REF;
 }
 
-Loopr_Value *
-proc_getc(ExeEnvironment *env, int argc, Loopr_Value **argv)
+Loopr_Value
+proc_getc(ExeEnvironment *env, int argc, Loopr_Value *argv)
 {
-	Loopr_Value *ret;
+	Loopr_Value ret;
 
-	ret = Loopr_alloc_value(LPR_CHAR);
-	ret->u.char_value = getc(stdin);
+	ret.int_value = getc(stdin);
 
 	return ret;
 }
 
-Loopr_Value *
-proc_gets(ExeEnvironment *env, int argc, Loopr_Value **argv)
+Loopr_Value
+proc_gets(ExeEnvironment *env, int argc, Loopr_Value *argv)
 {
-	Loopr_Value *ret;
+	Loopr_Value ret;
 	char buffer[CONV_STRING_BUFFER_SIZE];
 
-	ret = Loopr_alloc_value(LPR_STRING);
+	ret.ref_value = Loopr_alloc_ref(LPR_STRING);
 	fscanf(stdin, "%s", buffer);
-	ret->u.string_value = Loopr_conv_string(buffer);
+	ret.ref_value->u.string_value = Loopr_conv_string(buffer);
 
 	return ret;
 }

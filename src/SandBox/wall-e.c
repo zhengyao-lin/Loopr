@@ -2,13 +2,13 @@
 #include <time.h>
 #include "SandBox_pri.h"
 #include "MEM.h"
-#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Value) * 2048)
+#define WALLE_COLLECT_THRESHOLD (sizeof(Loopr_Ref) * 2048)
 
 static void (*__walle_marker)(void);
 static Loopr_Int64 __threshold = WALLE_COLLECT_THRESHOLD;
 static Loopr_Int64 __allocd_size = 0;
-static Loopr_Value *__walle_header = NULL;
-static Loopr_Value *__walle_tail = NULL;
+static Loopr_Ref *__walle_header = NULL;
+static Loopr_Ref *__walle_tail = NULL;
 static int __alive_period = 1;
 
 void
@@ -25,13 +25,13 @@ Walle_get_alive_period()
 }
 
 void
-Walle_set_header(Loopr_Value *v)
+Walle_set_header(Loopr_Ref *v)
 {
 	__walle_header = v;
 	return;
 }
 
-Loopr_Value *
+Loopr_Ref *
 Walle_get_header()
 {
 	return __walle_header;
@@ -77,7 +77,7 @@ Walle_get_marker()
 }
 
 void
-Walle_add_object(Loopr_Value *v)
+Walle_add_object(Loopr_Ref *v)
 {
 	if (!__walle_header) {
 		__walle_header = __walle_tail = v;
@@ -87,20 +87,21 @@ Walle_add_object(Loopr_Value *v)
 		__walle_tail = v;
 	}
 
-	__allocd_size += sizeof(Loopr_Value);
+	__allocd_size += sizeof(Loopr_Ref);
 
 	return;
 }
 
 void
-Walle_dispose_value(Loopr_Value **target)
+Walle_dispose_value(Loopr_Ref **target)
 {
-	Loopr_Value *tmp;
+	Loopr_Ref *tmp;
 
 	if ((*target)->type == LPR_STRING) {
 		MEM_free((*target)->u.string_value);
 	} else if ((*target)->type == LPR_ARRAY) {
 		MEM_free((*target)->u.array_value.value);
+		MEM_free((*target)->u.array_value.ref_flag);
 	}
 
 	if ((*target)->prev) {
@@ -118,7 +119,7 @@ Walle_dispose_value(Loopr_Value **target)
 	tmp = (*target)->next;
 	MEM_free(*target);
 	*target = tmp;
-	__allocd_size -= sizeof(Loopr_Value);
+	__allocd_size -= sizeof(Loopr_Ref);
 
 	return;
 }
@@ -127,7 +128,7 @@ Walle_dispose_value(Loopr_Value **target)
 void
 Walle_gcollect()
 {
-	Loopr_Value *pos;
+	Loopr_Ref *pos;
 
 	for (pos = __walle_header; pos;) {
 		if (pos->marked != __alive_period) {
@@ -173,6 +174,7 @@ Walle_dispose_environment(ExeEnvironment *env)
 	Walle_dispose_exe_container(env->exe);
 	if (env->stack.value) {
 		MEM_free(env->stack.value);
+		MEM_free(env->stack.ref_flag);
 	}
 	if (env->local_variable_map->variable) {
 		MEM_free(env->local_variable_map->variable);

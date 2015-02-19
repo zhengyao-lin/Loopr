@@ -23,7 +23,7 @@ TypeInfo Loopr_Type_Info[] = {
 	{"i64",		"Int64",		"%ld",		sizeof(Loopr_Int64)},
 	{"u64",		"UInt64",		"%lu",		sizeof(Loopr_UInt64)},
 
-	{"f8",		"Single",		"%f",		sizeof(Loopr_Single)},
+	{"f8",		"Single",		"%f",		sizeof(Loopr_Double)}, /* Convert to double */
 	{"f16",		"Double",		"%lf",		sizeof(Loopr_Double)},
 	{"str",		"String",		"%s",		sizeof(Loopr_Char *)},
 
@@ -42,27 +42,16 @@ Loopr_byte_serialize(const void *data, int length)
 	return ret;
 }
 
-Loopr_InfoTable *
-Loopr_alloc_info_table(Loopr_BasicType type)
+Loopr_Ref *
+Loopr_alloc_ref(Loopr_BasicType type)
 {
-	Loopr_InfoTable *ret;
+	Loopr_Ref *ret;
 
-	ret = MEM_malloc(sizeof(Loopr_InfoTable));
-	ret->type = type;
-
-	return ret;
-}
-
-Loopr_Value *
-Loopr_alloc_value(Loopr_BasicType type)
-{
-	Loopr_Value *ret;
-
-	ret = MEM_malloc(sizeof(Loopr_Value));
-	ret->type = type;
-	ret->u.double_value = NULL_VALUE;
-
+	ret = MEM_malloc(sizeof(Loopr_Ref));
 	ret->marked = 0;
+
+	ret->type = type;
+
 	ret->prev = NULL;
 	ret->next = NULL;
 	Walle_add_object(ret);
@@ -70,16 +59,16 @@ Loopr_alloc_value(Loopr_BasicType type)
 	return ret;
 }
 
-Loopr_Value *
+Loopr_Ref *
 Loopr_create_string(Loopr_Byte *data, int *offset)
 {
 	int length;
-	Loopr_Value *ret;
+	Loopr_Ref *ret;
 
 	length = Loopr_mbstowcs_len((char *)data);
 	*offset = strlen((char *)data) + 1;
 
-	ret = Loopr_alloc_value(LPR_STRING);
+	ret = Loopr_alloc_ref(LPR_STRING);
 
 	ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (length + 1));
 	Loopr_mbstowcs((char *)data, ret->u.string_value);
@@ -101,22 +90,19 @@ Loopr_conv_string(Loopr_Byte *data)
 	return ret;
 }
 
-Loopr_Value *
-Loopr_create_object(Loopr_Value *orig)
+Loopr_Ref *
+Loopr_create_object(Loopr_Value orig, Loopr_Boolean ref_flag)
 {
-	Loopr_Value *ret;
+	Loopr_Ref *ret;
 
-	if (orig && orig->type == LPR_OBJECT) {
-		return orig;
-	}
-
-	ret = Loopr_alloc_value(LPR_OBJECT);
-	ret->u.object_value = orig;
+	ret = Loopr_alloc_ref(LPR_OBJECT);
+	ret->u.object_value.value = orig;
+	ret->u.object_value.ref_flag = ref_flag;
 
 	return ret;
 }
 
-Loopr_Value *
+Loopr_Value
 Loopr_get_init_value(Loopr_BasicType type)
 {
 	/*Loopr_Value *value;
@@ -144,6 +130,8 @@ Loopr_get_init_value(Loopr_BasicType type)
 			value = Loopr_create_null();
 			break;
 	}*/
+	Loopr_Value value;
+	value.ref_value = NULL;
 
-	return Loopr_create_null();
+	return value;
 }

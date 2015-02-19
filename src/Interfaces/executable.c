@@ -75,7 +75,9 @@ ISerialize_save_exe_environment(FILE *fp, ExeEnvironment *src)
 	ISerialize_save_bytecode(fp, src->exe->code, src->exe->length);
 
 	for (i = 0; i < src->sub_name_space_count; i++) {
-		ISerialize_save_exe_environment(fp, src->sub_name_space[i]);
+		if (i != src->self_reflect) {
+			ISerialize_save_exe_environment(fp, src->sub_name_space[i]);
+		}
 	}
 
 	for (i = 0; i < src->function_count; i++) {
@@ -115,7 +117,11 @@ ISerialize_read_exe_environment(FILE *fp)
 
 	ret->sub_name_space = MEM_malloc(sizeof(ExeEnvironment) * ret->sub_name_space_count);
 	for (i = 0; i < ret->sub_name_space_count; i++) {
-		ret->sub_name_space[i] = ISerialize_read_exe_environment(fp);
+		if (i != ret->self_reflect) {
+			ret->sub_name_space[i] = ISerialize_read_exe_environment(fp);
+		} else {
+			ret->sub_name_space[i] = ret;
+		}
 	}
 
 	ret->function = MEM_malloc(sizeof(ExeEnvironment) * ret->function_count);

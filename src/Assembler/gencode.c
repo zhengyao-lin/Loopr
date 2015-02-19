@@ -206,35 +206,17 @@ Gencode_fix_load_byte(ByteContainer *env, Statement *list)
 		Coding_push_code(env, LPR_NULL_CODE, (Loopr_Byte *)&type, 1);
 	}
 
-	if (type <= LPR_INT64
-		|| type == const_type_mapping[list->constant->type].basic_type) {
+	if (type <= LPR_INT64) {
 		Coding_push_code(env, LPR_NULL_CODE,
 						 (Loopr_Byte *)&list->constant->u.int64_value,
 						 Loopr_Type_Info[type].size);
 	} else { /* float convert */
 		if (list->constant->type == CONST_SINGLE) { /* single to double */
-			if (type == LPR_DOUBLE) {
-				list->constant->u.double_value = (Loopr_Double)list->constant->u.single_value;
-			} else {
-				list->constant->u.double_value = (Loopr_Double)GET_BIT(list->constant->u.int64_value,
-																	   CONST_TYPE_MAP(list->constant->type));
-			}
-
-			Coding_push_code(env, LPR_NULL_CODE,
-						 	(Loopr_Byte *)&list->constant->u.double_value,
-						 	Loopr_Type_Info[type].size);
-		} else { /* double to single */
-			if (type == LPR_SINGLE) {
-				list->constant->u.single_value = (Loopr_Single)list->constant->u.double_value;
-			} else {
-				list->constant->u.single_value = (Loopr_Single)GET_BIT(list->constant->u.int64_value,
-																	   CONST_TYPE_MAP(list->constant->type));
-			}
-
-			Coding_push_code(env, LPR_NULL_CODE,
-						 	(Loopr_Byte *)&list->constant->u.single_value,
-						 	Loopr_Type_Info[type].size);
+			list->constant->u.double_value = (Loopr_Double)list->constant->u.single_value;
 		}
+		Coding_push_code(env, LPR_NULL_CODE,
+					 	 (Loopr_Byte *)&list->constant->u.double_value,
+					 	 Loopr_Type_Info[type].size);
 	}
 	return;
 }
@@ -681,6 +663,8 @@ Gencode_compile(Asm_Compiler *compiler)
 	container = Coding_init_coding_env();
 
 	default_index = Gencode_search_name_space_index(compiler->default_name_space);
+
+	container->self_reflect = default_index;
 	container->sub_name_space_count = compiler->name_space_count;
 	container->sub_name_space = MEM_malloc(sizeof(ByteContainer) * compiler->name_space_count);
 	for (i = 0; i < compiler->name_space_count; i++) {

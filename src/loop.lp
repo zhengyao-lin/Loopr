@@ -57,7 +57,8 @@ namespace Main {
 
 	ldstr "你好"
 	invoke println, 1
-	ldstr "issue a command: "
+
+	/*ldstr "issue a command: "
 	invoke print, 1
 
 	ldstr "\""
@@ -65,7 +66,7 @@ namespace Main {
 	addstr
 	ldstr "\"? what dose that mean?\n"
 	addstr
-	invoke println, 1
+	invoke println, 1*/
 
 	.function TRIMUL(first, second, third) {
 		.def var
@@ -127,9 +128,9 @@ namespace Main {
 	ldstr "printstr"
 	invoke Printk, 1
 
-	ldstr "260.0"
+	/*ldstr "260.0"
 	conv.b8
-	popb
+	popb*/
 
 
 	/* ARRAY! */
@@ -156,7 +157,7 @@ namespace Main {
 	ldarr [1][2][3]
 	popf
 
-	ldb.bl true
+	/*ldb.bl true
 	conv.str
-	popstr
+	popstr*/
 }

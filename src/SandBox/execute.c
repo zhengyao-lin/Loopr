@@ -9,63 +9,21 @@
 	((stack).value[(stack).stack_pointer + (offset)])
 #define ST_i(stack, p) \
 	((stack).value[p])
+#define ST_flag(stack, offset) \
+	((stack).ref_flag[(stack).stack_pointer + (offset)])
+#define ST_flag_i(stack, p) \
+	((stack).ref_flag[p])
+
 
 #define ST_TYPE(stack, offset) \
 	((stack).value[(stack).stack_pointer + (offset)]->type)
 
-#define ST_BYTE(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.byte_value)
-#define ST_SBYTE(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.sbyte_value)
-#define ST_INT16(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.int16_value)
-#define ST_UINT16(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.uint16_value)
-#define ST_INT32(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.int32_value)
-#define ST_UINT32(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.uint32_value)
-#define ST_STRING(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.string_value)
-#define ST_INT64(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.int64_value)
-#define ST_UINT64(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.uint64_value)
-#define ST_SINGLE(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.single_value)
-#define ST_DOUBLE(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.double_value)
+#define ST_INTEGER(stack, offset) \
+	((stack).value[(stack).stack_pointer + (offset)].int_value)
 #define ST_FLOAT(stack, offset) \
-	(ST_TYPE((stack), (offset)) == LPR_SINGLE \
-	? (stack).value[(stack).stack_pointer + (offset)]->u.single_value \
-	: (stack).value[(stack).stack_pointer + (offset)]->u.double_value)
-#define ST_STRING(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.string_value)
-#define ST_OBJECT(stack, offset) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.object_value)
-
-#define ST_WRITE(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)] = r)
-#define ST_WRITE_BYTE(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.byte_value = r)
-#define ST_WRITE_SBYTE(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.sbyte_value = r)
-#define ST_WRITE_INT16(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.int16_value = r)
-#define ST_WRITE_UINT16(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.uint16_value = r)
-#define ST_WRITE_INT32(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.int32_value = r)
-#define ST_WRITE_UINT32(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.uint32_value = r)
-#define ST_WRITE_INT64(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.int64_value = r)
-#define ST_WRITE_UINT64(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.uint64_value = r)
-#define ST_WRITE_SINGLE(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.single_value = r)
-#define ST_WRITE_DOUBLE(stack, offset, r) \
-	((stack).value[(stack).stack_pointer + (offset)]->u.double_value = r)
+	((stack).value[(stack).stack_pointer + (offset)].float_value)
+#define ST_REF(stack, offset) \
+	((stack).value[(stack).stack_pointer + (offset)].ref_value)
 
 #define TYPE_CMP(t1, t2) \
 	((t1) >= (t2) ? (t1) : (t2))
@@ -77,17 +35,17 @@
 #define is_unsigned(type) \
 	(type % 2 != 0 ? LPR_True : LPR_False)
 
-static Loopr_Value *
-chain_string(Loopr_Value *str1, Loopr_Value *str2)
+static Loopr_Ref *
+chain_string(Loopr_Ref *str1, Loopr_Ref *str2)
 {
 	int len;
-	Loopr_Value *ret;
+	Loopr_Ref *ret;
 	Loopr_Char *right;
 	Loopr_Char *left;
 
 	right = get_visual_string(str1);
 	left = get_visual_string(str2);
-	ret = Loopr_alloc_value(LPR_STRING);
+	ret = Loopr_alloc_ref(LPR_STRING);
 
 	len = Loopr_wcslen(right) + Loopr_wcslen(left);
 	ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (len + 1));
@@ -98,15 +56,15 @@ chain_string(Loopr_Value *str1, Loopr_Value *str2)
 	return ret;
 }
 
-static Loopr_Value *ret_value;
-
-static Loopr_Value *
+static Loopr_Value
 Private_do_push_byte(Loopr_BasicType basic_type, Loopr_Byte *code, int *offset)
 {
-	ret_value = Loopr_alloc_value(basic_type);
-	Loopr_byte_deserialize(&ret_value->u.int64_value,
+	Loopr_Value ret_value;
+
+	Loopr_byte_deserialize(&ret_value.int_value,
 						   code, Loopr_Type_Info[basic_type].size);
 	*offset = Loopr_Type_Info[basic_type].size;
+
 	return ret_value;
 }
 
@@ -131,37 +89,8 @@ Private_init_local_variable(ExeEnvironment *env, Loopr_BasicType type, int index
 	return;
 }
 
-static Loopr_Value *
-Private_copy_variable(Loopr_Value *src)
-{
-	Loopr_Value *ret = NULL;
-	if (src) {
-		if (Loopr_is_ref_type(src)) {
-			return src;
-		}
-		ret = Loopr_alloc_value(src->type);
-		ret->u = src->u;
-		/*if (src->type == LPR_STRING) {
-			if (src->u.string_value) {
-				ret->u.string_value = MEM_malloc(sizeof(Loopr_Char) * (Loopr_wcslen(src->u.string_value) + 1));
-				Loopr_wcscpy(ret->u.string_value, src->u.string_value);
-			}
-		} else if (src->type == LPR_ARRAY) {
-			int i;
-
-			ret->u.array_value.size = src->u.array_value.size;
-			ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value *) * ret->u.array_value.size);
-			for (i = 0; i < src->u.array_value.size; i++) {
-				ret->u.array_value.value[i] = Private_copy_variable(src->u.array_value.value[i]);
-			}
-		}*/
-	}
-
-	return ret;
-}
-
 static void
-Private_assign_local_variable(ExeEnvironment *env, int index, Loopr_Value *value)
+Private_assign_local_variable(ExeEnvironment *env, int index, Loopr_Value value, Loopr_Boolean ref_flag)
 {
 #ifdef SENSLTIVE
 	if ((index < 0 || index >= env->local_variable_map->count)
@@ -173,12 +102,13 @@ Private_assign_local_variable(ExeEnvironment *env, int index, Loopr_Value *value
 
 	env->local_variable_map->variable[index].identifier = NULL;
 	env->local_variable_map->variable[index].value = value;
+	env->local_variable_map->variable[index].ref_flag = ref_flag;
 
 	return;
 }
 
-static Loopr_Value *
-Private_load_local_variable(ExeEnvironment *env, int index)
+static Loopr_Value
+Private_load_local_variable(ExeEnvironment *env, int index, Loopr_Boolean *ref_flag)
 {
 #ifdef SENSLTIVE
 	if ((index < 0 || index >= env->local_variable_map->count)
@@ -188,7 +118,8 @@ Private_load_local_variable(ExeEnvironment *env, int index)
 	}
 #endif
 
-	return Private_copy_variable(env->local_variable_map->variable[index].value);
+	*ref_flag = env->local_variable_map->variable[index].ref_flag;
+	return env->local_variable_map->variable[index].value;
 }
 
 static void
@@ -198,7 +129,8 @@ Private_expand_stack(Loopr_Stack *stack, int add)
 
 	rest = stack->alloc_size - stack->stack_pointer;
 	if (rest < add) {
-		stack->value = MEM_realloc(stack->value, sizeof(Loopr_Value *) * (stack->alloc_size + add - rest));
+		stack->value = MEM_realloc(stack->value, sizeof(Loopr_Value) * (stack->alloc_size + add - rest));
+		stack->ref_flag = MEM_realloc(stack->ref_flag, sizeof(Loopr_Boolean) * (stack->alloc_size + add - rest));
 		stack->alloc_size += add - rest;
 	}
 
@@ -206,21 +138,21 @@ Private_expand_stack(Loopr_Stack *stack, int add)
 }
 
 static void
-Private_mark_value(Loopr_Value *obj)
+Private_mark_value(Loopr_Ref *obj)
 {
 	if (!obj) {
-		return;
-	} else if (obj->marked == Walle_get_alive_period()) {
 		return;
 	}
 
 	obj->marked = Walle_get_alive_period();
-	if (obj->type == LPR_OBJECT) {
-		Private_mark_value(obj->u.object_value);
+	if (obj->type == LPR_OBJECT && obj->u.object_value.ref_flag) {
+		Private_mark_value(obj->u.object_value.value.ref_value);
 	} else if (obj->type == LPR_ARRAY) {
 		int i;
 		for (i = 0; i < obj->u.array_value.size; i++) {
-			Private_mark_value(obj->u.array_value.value[i]);
+			if (obj->u.array_value.ref_flag[i]) {
+				Private_mark_value(obj->u.array_value.value[i].ref_value);
+			}
 		}
 	}
 
@@ -239,12 +171,16 @@ Private_walle_marker(ExeEnvironment *env)
 
 	for (pos = env->local_variable_map; pos; pos = pos->prev) {
 		for (i = 0; i < pos->count; i++) {
-			Private_mark_value(pos->variable[i].value);
+			if (pos->variable[i].ref_flag) {
+				Private_mark_value(pos->variable[i].value.ref_value);
+			}
 		}
 	}
 
 	for (i = 0; i <= env->stack.stack_pointer; i++) {
-		Private_mark_value(env->stack.value[i]);
+		if (env->stack.ref_flag[i]) {
+			Private_mark_value(env->stack.value[i].ref_value);
+		}
 	}
 
 	return;
@@ -253,7 +189,6 @@ Private_walle_marker(ExeEnvironment *env)
 static ExeEnvironment *callee;
 static ExeEnvironment *outer;
 static int pri_i, pri_j;
-#include <time.h>
 
 static LocalVariableMap *
 Private_init_arguments(int argc)
@@ -280,10 +215,14 @@ static void
 Private_invoke_function(ExeEnvironment *env, int name_space, int index, int argc,
 						int *pc_p, int *base_p)
 {
+	Loopr_Value ret_value;
 	CallInfo *call_info;
 	ExeEnvironment *callee;
 
-	outer = Private_get_top_level()->sub_name_space[name_space];
+	if (!(outer = Private_get_top_level()->sub_name_space[name_space])) {
+		outer = Private_get_top_level();
+	}
+
 	callee = outer->function[index];
 	*pc_p += 2 + sizeof(Loopr_Int32) + sizeof(Loopr_Int32);
 
@@ -316,23 +255,27 @@ Private_invoke_function(ExeEnvironment *env, int name_space, int index, int argc
 	env->local_variable_map->prev = call_info->local_list;
 
 	for (pri_i = 0; pri_i < argc; pri_i++) {
-		Private_assign_local_variable(env, pri_i, ST_i(env->stack, *base_p + pri_i));
+		Private_assign_local_variable(env, pri_i, ST_i(env->stack, *base_p + pri_i), ST_flag_i(env->stack, *base_p + pri_i));
 	}
 
-	env->stack.value[*base_p] = (Loopr_Value *)call_info;
+	env->stack.value[*base_p].call_info = call_info;
+	env->stack.ref_flag[*base_p] = LPR_False;
 
 	env->exe = callee->exe;
 	*pc_p = callee->exe->entrance;
 	return;
 }
 
-static Loopr_Value *
+static Loopr_Value
 Private_do_return(ExeEnvironment *env, int *pc_p, int *base_p)
 {
+	Loopr_Value ret_value;
+	Loopr_Boolean flag;
 	CallInfo *call_info;
 
-	call_info = (CallInfo *)env->stack.value[*base_p];
+	call_info = env->stack.value[*base_p].call_info;
 	ret_value = env->stack.value[env->stack.stack_pointer];
+	flag = env->stack.ref_flag[env->stack.stack_pointer];
 
 	env->stack.stack_pointer = *base_p - 1;
 
@@ -343,6 +286,7 @@ Private_do_return(ExeEnvironment *env, int *pc_p, int *base_p)
 	Private_dispose_arguments(env->local_variable_map);
 
 	env->local_variable_map = call_info->local_list;
+	env->stack.ref_flag[env->stack.stack_pointer + 1] = flag;
 
 	free(call_info);
 
@@ -366,6 +310,7 @@ Private_convert_string_to_byte(Loopr_Char *str, char *controller)
 	return ret;
 }
 
+/*
 static void
 Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 {
@@ -448,31 +393,36 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 
 	return;
 }
+*/
 
 #define LOWER_LEVEL ("|--\t")
 
-static Loopr_Value *
+static Loopr_Ref *
 Private_create_one_dim_array(Loopr_Int32 size)
 {
-	Loopr_Value *ret;
+	Loopr_Ref *ret;
 
-	ret = Loopr_alloc_value(LPR_ARRAY);
+	ret = Loopr_alloc_ref(LPR_ARRAY);
 	ret->u.array_value.size = size;
 	if (size) {
-		ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value *) * size);
-		memset(&ret->u.array_value.value[0], NULL_VALUE, sizeof(Loopr_Value *) * size);
+		ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value) * size);
+		ret->u.array_value.ref_flag = MEM_malloc(sizeof(Loopr_Boolean) * size);
+
+		memset(&ret->u.array_value.value[0], NULL_VALUE, sizeof(Loopr_Value) * size);
+		memset(&ret->u.array_value.ref_flag[0], NULL_VALUE, sizeof(Loopr_Boolean) * size);
 	} else {
 		ret->u.array_value.value = NULL;
+		ret->u.array_value.ref_flag = NULL;
 	}
 
 	return ret;
 }
 
-static Loopr_Value *
+static Loopr_Ref *
 Private_create_array(ExeEnvironment *env, int dim)
 {
-	Loopr_Value *ret;
-	int size = ST_INT64(env->stack, -dim + 1);
+	Loopr_Ref *ret;
+	int size = ST_INTEGER(env->stack, -dim + 1);
 	int i;
 
 	if (dim == 1) {
@@ -480,25 +430,31 @@ Private_create_array(ExeEnvironment *env, int dim)
 		return ret;
 	}
 
-	ret = Loopr_alloc_value(LPR_ARRAY);
+	ret = Loopr_alloc_ref(LPR_ARRAY);
 	ret->u.array_value.size = size;
 	if (size) {
-		ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value *) * size);
+		ret->u.array_value.value = MEM_malloc(sizeof(Loopr_Value) * size);
+		ret->u.array_value.ref_flag = MEM_malloc(sizeof(Loopr_Boolean) * size);
 		for (i = 0; i < size; i++) {
-			ret->u.array_value.value[i] = Private_create_array(env, dim - 1);
+			ret->u.array_value.value[i].ref_value = Private_create_array(env, dim - 1);
+			ret->u.array_value.ref_flag[i] = LPR_True;
 		}
 	} else {
 		ret->u.array_value.value = NULL;
+		ret->u.array_value.ref_flag = NULL;
 	}
 
 	return ret;
 }
 
-static Loopr_Value *
-Private_get_array(Loopr_Value *array, int index)
+static Loopr_Value
+Private_get_array(Loopr_Ref *array, int index, Loopr_Boolean *ref_flag)
 {
+	Loopr_Value ret_value;
+
 	if (array && array->type == LPR_ARRAY) {
 		if (index < array->u.array_value.size) {
+			*ref_flag = array->u.array_value.ref_flag[index];
 			return array->u.array_value.value[index];
 		} else {
 			DBG_panic(("Array range error: The size of array is %d, but the given index is %d\n",
@@ -508,15 +464,16 @@ Private_get_array(Loopr_Value *array, int index)
 	} else {
 		DBG_panic(("Use array method to non-array value\n"));
 	}
-	return NULL;
+	return ret_value;
 }
 
 static void
-Private_store_array(Loopr_Value *array, int index, Loopr_Value *value)
+Private_store_array(Loopr_Ref *array, int index, Loopr_Value value, Loopr_Boolean ref_flag)
 {
 	if (array && array->type == LPR_ARRAY) {
 		if (index < array->u.array_value.size) {
 			array->u.array_value.value[index] = value;
+			array->u.array_value.ref_flag[index] = ref_flag;
 			return;
 		} else {
 			DBG_panic(("Array range error: The size of array is %d, but the given index is %d\n",
@@ -536,13 +493,15 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 	int arg2;
 	int base = 0;
 	int pc = env->exe->entrance;
+	Loopr_Value ret_value;
 
 	if (top_level) {
 		env->local_variable_map->variable = MEM_malloc(sizeof(LocalVariable) * env->local_variable_map->count);
 		for (pri_i = 0; pri_i < env->local_variable_map->count; pri_i++) {
-			env->local_variable_map->variable[pri_i].value = Loopr_create_null();
+			env->local_variable_map->variable[pri_i].value.ref_value = Loopr_create_null();
 		}
-		env->stack.value = MEM_malloc(sizeof(Loopr_Value *) * (env->stack.alloc_size + 1));
+		env->stack.value = MEM_malloc(sizeof(Loopr_Value) * (env->stack.alloc_size + 1));
+		env->stack.ref_flag = MEM_malloc(sizeof(Loopr_Boolean) * (env->stack.alloc_size + 1));
 		Private_set_top_level(env);
 	}
 	for (; pc < env->exe->length;) {
@@ -568,18 +527,20 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 		switch (env->exe->code[pc]) {
 			case LPR_LD_BYTE: {
 				ST(env->stack, 1) = Private_do_push_byte(env->exe->code[pc + 1], &env->exe->code[pc + 2], &arg1);
+				ST_flag(env->stack, 1) = LPR_False;
 				env->stack.stack_pointer++;
 				pc += 2 + arg1;
 				break;
 			}
 			case LPR_LD_NULL: {
-				ST(env->stack, 1) = Loopr_create_null();
+				ST_REF(env->stack, 1) = Loopr_create_null();
 				env->stack.stack_pointer++;
 				pc++;
 				break;	
 			}
 			case LPR_LD_STRING: {
-				ST(env->stack, 1) = Loopr_create_string(&(env->exe->code[pc + 1]), &arg1);
+				ST_REF(env->stack, 1) = Loopr_create_string(&(env->exe->code[pc + 1]), &arg1);
+				ST_flag(env->stack, 1) = LPR_True;
 				env->stack.stack_pointer++;
 				pc += 1 + arg1;
 				break;				
@@ -587,7 +548,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_LD_LOC: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				ST(env->stack, 1) = Private_load_local_variable(env, arg1);
+				ST(env->stack, 1) = Private_load_local_variable(env, arg1, &ST_flag(env->stack, 1));
 				env->stack.stack_pointer++;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
@@ -595,22 +556,24 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_LD_ARRAY: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				ST(env->stack, 0) = Private_get_array(ST(env->stack, 0), arg1);
+				ST(env->stack, 0) = Private_get_array(ST_REF(env->stack, 0), arg1, &ST_flag(env->stack, 0));
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
-			case LPR_CONVERT: {
+			/*case LPR_CONVERT: {
 				Private_convert(ST_TYPE(env->stack, 0), env->exe->code[pc + 1], ST(env->stack, 0));
 				pc += 2;
 				break;
-			}
+			}*/
 			case LPR_BOXING: {
-				ST(env->stack, 0) = Loopr_create_object(ST(env->stack, 0));
+				ST_REF(env->stack, 0) = Loopr_create_object(ST(env->stack, 0), ST_flag(env->stack, 0));
+				ST_flag(env->stack, 0) = LPR_True;
 				pc++;
 				break;
 			}
 			case LPR_UNBOXING: {
-				ST(env->stack, 0) = (ST(env->stack, 0) ? ST_OBJECT(env->stack, 0) : NULL);
+				ST(env->stack, 0) = ST_REF(env->stack, 0)->u.object_value.value;
+				ST_flag(env->stack, 0) = ST_REF(env->stack, 0)->u.object_value.ref_flag;
 				pc++;
 				break;
 			}
@@ -620,32 +583,19 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				break;
 			}
 			case LPR_POP_BYTE: {
-				Loopr_BasicType type = ST_TYPE(env->stack, 0);
-				if (is_unsigned(type)) {
-					printf("%s#pop_%s: %lu\n", (!top_level ? LOWER_LEVEL : ""),
-											   Loopr_Type_Info[type].assembly_name,
-											   GET_BIT(ST_UINT64(env->stack, 0), type));
-				} else {
-					printf("%s#pop_%s: %ld\n", (!top_level ? LOWER_LEVEL : ""),
-											   Loopr_Type_Info[type].assembly_name,
-											   GET_BIT(ST_INT64(env->stack, 0), type));
-				}
+				printf("#pop_byte: %ld\n", ST_INTEGER(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_POP_FLOAT: {
-				if (ST_TYPE(env->stack, 0) == LPR_SINGLE) {
-					printf("%s#pop_single: %f\n", (!top_level ? LOWER_LEVEL : ""), ST_SINGLE(env->stack, 0));
-				} else {
-					printf("%s#pop_double: %lf\n", (!top_level ? LOWER_LEVEL : ""), ST_DOUBLE(env->stack, 0));
-				}
+				printf("#pop_float: %lf\n", ST_FLOAT(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_POP_STRING: {
-				printf("%s#pop_string: %ls\n", (!top_level ? LOWER_LEVEL : ""), get_visual_string(ST(env->stack, 0)));
+				printf("#pop_string: %ls\n", get_visual_string(ST_REF(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
@@ -653,7 +603,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_STORE_LOC: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				Private_assign_local_variable(env, arg1, ST(env->stack, 0));
+				Private_assign_local_variable(env, arg1, ST(env->stack, 0), ST_flag(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
@@ -661,13 +611,13 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_STORE_ARRAY: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				Private_store_array(ST(env->stack, -1), arg1, ST(env->stack, 0));
+				Private_store_array(ST_REF(env->stack, -1), arg1, ST(env->stack, 0), ST_flag(env->stack, 0));
 				env->stack.stack_pointer -= 2;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
 			case LPR_BRANCH: {
-				if (env->exe->code[pc + 1] == (ST_INT64(env->stack, 0) == env->exe->code[pc + 2])) {
+				if (env->exe->code[pc + 1] == (ST_INTEGER(env->stack, 0) == env->exe->code[pc + 2])) {
 					Loopr_byte_deserialize(&pc, &env->exe->code[pc + 3], sizeof(Loopr_Int32));
 				} else {
 					pc += 3 + sizeof(Loopr_Int32);
@@ -676,64 +626,61 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				break;
 			}
 			case LPR_DUPLICATE: {
-				ST(env->stack, 1) = Private_copy_variable(ST(env->stack, -env->exe->code[pc + 1]));
+				ST(env->stack, 1) = ST(env->stack, -env->exe->code[pc + 1]);
+				ST_flag(env->stack, 1) = ST_flag(env->stack, 0);
 				env->stack.stack_pointer++;
 				pc += 2;
 				break;
 			}
 			case LPR_ADD_BYTE: {
-				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) + ST_INT64(env->stack, 0));
-				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
-												   ST_TYPE(env->stack, 0));
+				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) + ST_INTEGER(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_ADD_FLOAT: {
-				ST_WRITE_DOUBLE(env->stack, -1, ST_DOUBLE(env->stack, -1) + ST_DOUBLE(env->stack, 0));
-				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
-												   ST_TYPE(env->stack, 0));
+				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) + ST_FLOAT(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_ADD_STRING: {
-				ST(env->stack, -1) = chain_string(ST(env->stack, -1), ST(env->stack, 0));
+				ST_REF(env->stack, -1) = chain_string(ST_REF(env->stack, -1), ST_REF(env->stack, 0));
+				ST_flag(env->stack, -1) = LPR_True;
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_SUB_BYTE: {
-				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) - ST_INT64(env->stack, 0));
-				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
-												   ST_TYPE(env->stack, 0));
+				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) - ST_INTEGER(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_MUL_BYTE: {
-				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) * ST_INT64(env->stack, 0));
-				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
-												   ST_TYPE(env->stack, 0));
+				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) * ST_INTEGER(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_DIV_BYTE: {
-				ST_WRITE_INT64(env->stack, -1, ST_INT64(env->stack, -1) / ST_INT64(env->stack, 0));
-				ST_TYPE(env->stack, -1) = TYPE_CMP(ST_TYPE(env->stack, -1),
-												   ST_TYPE(env->stack, 0));
+				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) / ST_INTEGER(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_INC: {
-				ST_INT64(env->stack, 0)++;
+				ST_INTEGER(env->stack, 0)++;
 				pc++;
 				break;
 			}
 			case LPR_DEC: {
-				ST_INT64(env->stack, 0)--;
+				ST_INTEGER(env->stack, 0)--;
 				pc++;
 				break;
 			}
@@ -749,19 +696,22 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			}
 			case LPR_NEW_ARRAY: {
 				arg1 = env->exe->code[pc + 1]; /* dim */
-				ST(env->stack, -arg1 + 1) = Private_create_array(env, arg1);
+				ST_REF(env->stack, -arg1 + 1) = Private_create_array(env, arg1);
+				ST_flag(env->stack, -arg1 + 1) = LPR_True;
+
 				env->stack.stack_pointer -= arg1 - 1;
 				pc += 2;
 				break;
 			}
 			case LPR_GOTO: {
 				Loopr_byte_deserialize(&pc, &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				printf("%s#goto: %d\n", (!top_level ? LOWER_LEVEL : ""), pc);
+				printf("#goto: %d\n", pc);
 				break;
 			}
 			case LPR_RETURN: {
 				ret_value = Private_do_return(env, &pc, &base);
 				ST(env->stack, 1) = ret_value;
+				/* the flag had been set in Private_do_return(...) */
 				env->stack.stack_pointer++;
 				break;
 			}

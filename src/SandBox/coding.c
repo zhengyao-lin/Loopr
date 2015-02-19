@@ -24,6 +24,11 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"stloc",	1,	-1},
 	{"starr",	2,	-2},
 
+	{"eq",		2,	-1}, /* ==	equal */
+	{"ne",		2,	-1}, /* !=	not equal */
+	{"gt",		2,	-1}, /* >	greater than */
+	{"lt",		2,	-1}, /* <	less than */
+
 	{"br",		1,	-1},
 	{"dup",		1,	1},
 
@@ -102,7 +107,7 @@ Coding_init_local_variable(ByteContainer *env, char *identifier)
 
 	env->local_variable = MEM_realloc(env->local_variable,
 									  sizeof(LocalVariable) * (env->local_variable_count + 1));
-	env->local_variable[env->local_variable_count].value = NULL;
+	env->local_variable[env->local_variable_count].value = NULL_REF;
 	env->local_variable[env->local_variable_count].identifier = identifier ? MEM_strdup(identifier) : NULL;
 	env->local_variable_count++;
 
@@ -198,11 +203,13 @@ Coding_init_exe_env(ByteContainer *env, WarningFlag wflag)
 	ret->stack.alloc_size = env->stack_size + 2; /* the last added two is for callinfo and overflow check */
 	ret->stack.stack_pointer = -1;
 	ret->stack.value = NULL;
+	ret->stack.ref_flag = NULL;
 	ret->local_variable_map = MEM_malloc(sizeof(LocalVariableMap));
 	ret->local_variable_map->count = env->local_variable_count;
 	ret->local_variable_map->variable = NULL;
 	ret->local_variable_map->prev = NULL;
 
+	ret->self_reflect = env->self_reflect;
 	ret->sub_name_space_count = env->sub_name_space_count;
 	ret->sub_name_space = NULL;
 	if (env->sub_name_space_count > 0) {

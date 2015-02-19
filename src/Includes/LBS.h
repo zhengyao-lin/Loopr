@@ -29,6 +29,11 @@ typedef enum {
 	LPR_STORE_LOC,
 	LPR_STORE_ARRAY,
 
+	LPR_EQUAL,
+	LPR_NOT_EQUAL,
+	LPR_GREATER_THAN,
+	LPR_LESS_THAN,
+
 	LPR_BRANCH,
 	LPR_DUPLICATE,
 
@@ -119,41 +124,34 @@ typedef struct Loopr_InfoTable_tag {
 	Loopr_BasicType type;
 } Loopr_InfoTable;
 
+typedef union {
+	Loopr_Int64				int_value;
+	Loopr_Double			float_value;
+	struct Loopr_Ref_tag	*ref_value;
+	struct CallInfo_tag		*call_info;
+} Loopr_Value;
+
 typedef struct Loopr_Array_tag {
-	Loopr_Size size;
-	struct Loopr_Value_tag **value;
+	Loopr_Size				size;
+	Loopr_Value				*value;
+	Loopr_Boolean			*ref_flag;
 } Loopr_Array;
 
-typedef struct Loopr_Value_tag {
+typedef struct Loopr_Ref_tag {
 	Loopr_Int32 marked;
-
 	Loopr_BasicType type;
 	union {
-		Loopr_Boolean 			boolean_value;
-		Loopr_Char				char_value;
-
-		Loopr_SByte				sbyte_value;
-		Loopr_Int16				int16_value;
-		Loopr_Int32				int32_value;
-		Loopr_Int64				int64_value;
-
-		Loopr_Byte				byte_value;
-		Loopr_UInt16			uint16_value;
-		Loopr_UInt32			uint32_value;
-		Loopr_UInt64			uint64_value;
-
-		Loopr_Single			single_value;
-		Loopr_Double			double_value;
-
 		Loopr_Char				*string_value;
-
-		struct Loopr_Value_tag	*object_value;
+		struct {
+			Loopr_Value		value;
+			Loopr_Boolean	ref_flag;
+		}						object_value;
 		Loopr_Array				array_value;
 	} u;
 
-	struct Loopr_Value_tag *prev;
-	struct Loopr_Value_tag *next;
-} Loopr_Value;
+	struct Loopr_Ref_tag *prev;
+	struct Loopr_Ref_tag *next;
+} Loopr_Ref;
 
 typedef struct ExeContainer_tag {
 	Loopr_Size entrance;
@@ -164,12 +162,14 @@ typedef struct ExeContainer_tag {
 typedef struct Loopr_Stack_tag {
 	Loopr_Size alloc_size;
 	Loopr_Size stack_pointer;
-	Loopr_Value **value;
+	Loopr_Value *value;
+	Loopr_Boolean *ref_flag;
 } Loopr_Stack;
 
 typedef struct LocalVariable_tag {
 	char *identifier;
-	Loopr_Value *value;
+	Loopr_Value value;
+	Loopr_Boolean ref_flag;
 } LocalVariable;
 
 typedef struct LocalVariableMap_tag {
@@ -222,6 +222,7 @@ typedef struct ByteContainer_tag {
 	Loopr_Size						local_variable_count;
 	LocalVariable					*local_variable;
 
+	Loopr_Size						self_reflect;
 	Loopr_Size						sub_name_space_count;
 	struct ByteContainer_tag		**sub_name_space;
 
@@ -262,6 +263,7 @@ typedef struct ExeEnvironment_tag {
 
 	struct NativeFunction_tag *native_function;
 
+	Loopr_Size self_reflect;
 	Loopr_Size sub_name_space_count;
 	struct ExeEnvironment_tag **sub_name_space;
 
@@ -269,7 +271,7 @@ typedef struct ExeEnvironment_tag {
 	struct ExeEnvironment_tag **function;
 } ExeEnvironment;
 
-typedef Loopr_Value * (*Loopr_NativeCallee)(ExeEnvironment *env, int argc, Loopr_Value **argv);
+typedef Loopr_Value (*Loopr_NativeCallee)(ExeEnvironment *env, int argc, Loopr_Value *argv);
 
 typedef struct NativeFunction_tag {
 	char *name;

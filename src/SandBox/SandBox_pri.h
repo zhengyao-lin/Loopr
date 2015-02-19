@@ -39,6 +39,8 @@
   || (value)->type == LPR_OBJECT \
   || (value)->type == LPR_ARRAY)
 
+static Loopr_Value NULL_REF = { NULL };
+
 /* execute.c */
 Loopr_Value *Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level);
 
@@ -47,13 +49,12 @@ Loopr_Byte *Loopr_byte_serialize(const void *data, int length);
 #define Loopr_byte_deserialize(dest, data, length) \
 	(memcpy((dest), (data), (length)))
 
-Loopr_InfoTable *Loopr_alloc_info_table(Loopr_BasicType type);
-Loopr_Value *Loopr_alloc_value(Loopr_BasicType type);
+Loopr_Ref *Loopr_alloc_ref(Loopr_BasicType type);
+Loopr_Ref *Loopr_create_string(Loopr_Byte *data, int *offset);
 Loopr_Char *Loopr_conv_string(Loopr_Byte *data);
-Loopr_Value *Loopr_create_string(Loopr_Byte *data, int *offset);
 #define Loopr_create_null() (NULL)
-Loopr_Value *Loopr_create_object(Loopr_Value *orig);
-Loopr_Value *Loopr_get_init_value(Loopr_BasicType type);
+Loopr_Ref *Loopr_create_object(Loopr_Value orig, Loopr_Boolean ref_flag);
+Loopr_Value Loopr_get_init_value(Loopr_BasicType type);
 
 /* coding.c */
 Loopr_Byte *Coding_alloc_byte(int length);
@@ -70,8 +71,8 @@ ExeEnvironment *Coding_init_exe_env(ByteContainer *env, WarningFlag wflag);
 typedef void (*Walle_Marker)(void);
 void Walle_update_alive_period();
 int Walle_get_alive_period();
-void Walle_set_header(Loopr_Value *v);
-Loopr_Value *Walle_get_header();
+void Walle_set_header(Loopr_Ref *v);
+Loopr_Ref *Walle_get_header();
 void Walle_add_alloc_size(Loopr_Int64 add);
 Loopr_Int64 Walle_get_alloc_size();
 void Walle_add_threshold(Loopr_Int64 add);
@@ -79,8 +80,8 @@ Loopr_Int64 Walle_get_threshold();
 void Walle_set_marker(Walle_Marker marker);
 Walle_Marker Walle_get_marker();
 
-void Walle_add_object(Loopr_Value *v);
-void Walle_dispose_value(Loopr_Value **target);
+void Walle_add_object(Loopr_Ref *v);
+void Walle_dispose_value(Loopr_Ref **target);
 void Walle_gcollect();
 void Walle_check_mem();
 

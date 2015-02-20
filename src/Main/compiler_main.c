@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 {
 	FILE *src = NULL;
 	FILE *dest = NULL;
+	Asm_Compiler *compiler;
 	ByteContainer *container;
 	setlocale(LC_ALL, "");
 #if 1
@@ -40,12 +41,12 @@ int main(int argc, char **argv)
 	}
 
 	Natives_load_all();
-	container = Gencode_compile(Asm_compile_file(src));
+	compiler = Asm_compile_file(src);
+	container = Gencode_compile(compiler);
 	ISerialize_save_exe_environment(dest, Coding_init_exe_env(container, LPR_ANYTHING));
 	fclose(src);
 	fclose(dest);
-	yylex_destroy();
-	Asm_dispose_current_compiler();
+	Asm_dispose_compiler(compiler, LPR_True);
 
 #endif
 Native_dispose_all();

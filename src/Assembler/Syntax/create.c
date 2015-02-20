@@ -193,3 +193,24 @@ Asm_chain_package_name(char *name, PackageName *list)
 
 	return ret;
 }
+
+void
+Asm_chain_import_list(PackageName *name)
+{
+	Asm_Compiler *compiler;
+	ImportList *pos;
+
+	compiler = Asm_get_current_compiler();
+	if (pos = compiler->import_list) {
+		for (; pos->next; pos = pos->next);
+		pos->next = ASM_malloc(sizeof(ImportList));
+		pos->next->name = name;
+		pos->next->next = NULL;
+	} else {
+		compiler->import_list = ASM_malloc(sizeof(ImportList));
+		compiler->import_list->name = name;
+		compiler->import_list->next = NULL;
+	}
+
+	return;
+}

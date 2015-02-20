@@ -109,7 +109,14 @@ typedef struct NameSpace_tag {
 	FunctionDefinition *function_definition;
 } NameSpace;
 
+typedef struct ImportList_tag {
+	PackageName *name;
+	struct ImportList_tag *next;
+} ImportList;
+
 typedef struct Asm_Compiler_tag {
+	ImportList *import_list;
+
 	char *default_name_space;
 
 	int current_name_space_index;
@@ -138,9 +145,12 @@ void Label_set_all(ByteContainer *env);
 void Asm_set_current_compiler(Asm_Compiler *compiler);
 Asm_Compiler *Asm_get_current_compiler();
 Asm_Compiler *Asm_init_compiler();
+FILE *Asm_open_import_file(PackageName *name);
+void Asm_compiler_name_space_cat(Asm_Compiler *dest, Asm_Compiler *src);
+void Asm_dispose_package_name(PackageName *pn);
 Asm_Compiler *Asm_compile_file(FILE *fp);
 void Asm_clean_local_env(ByteContainer *env);
-void Asm_dispose_compiler(Asm_Compiler *compiler);
+void Asm_dispose_compiler(Asm_Compiler *compiler, Loopr_Boolean clean_name_space_flag);
 void Asm_dispose_current_compiler();
 
 /* create.c */
@@ -157,6 +167,7 @@ Constant *Asm_create_block(StatementList *list);
 void Asm_begin_namespace(char *name);
 PackageName *Asm_create_package_name(char *name);
 PackageName *Asm_chain_package_name(char *name, PackageName *list);
+void Asm_chain_import_list(PackageName *name);
 
 /* string.c */
 void Asm_open_string_literal(void);

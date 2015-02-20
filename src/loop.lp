@@ -1,4 +1,5 @@
 default Main
+import solve
 namespace SubMain {
 	.function void non_function2() {
 		ldstr "yes!!!"
@@ -173,4 +174,9 @@ IS_TRUE:
 	ldstr "it's true!"
 	invoke println, 1
 END:
+
+	ldc.10
+	ldc.10
+	invoke <Solve>Recursive, 2
+	popb
 }

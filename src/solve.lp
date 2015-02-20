@@ -1,4 +1,4 @@
-namespace Main {
+namespace Solve {
 	.function Recursive {
 		ldarg.0
 		br.1 {
@@ -26,7 +26,7 @@ namespace Main {
 		ret
 	}
 
-	ldc.15
+	ldc.10
 	ldc.10
 	invoke "Recursive", 2
 	popb

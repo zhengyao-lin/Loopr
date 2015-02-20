@@ -21,7 +21,6 @@ clean:
 Syntax/Syntax.o:
 	cd Syntax; $(MAKE);
 
-interface.o: interface.c ../Includes/LBS.h ../Includes/Assembler.h
+interface.o: interface.c ../Includes/LBS.h ../Includes/Assembler.h ../Includes/Versions.h
 gencode.o: gencode.c ../Includes/LBS.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/Assembler.h ../SandBox/SandBox_pri.h
 label.o: label.c ../Includes/LBS.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/Assembler.h ../SandBox/SandBox_pri.h
-#main.o: main.c Syntax/syntax.h global.h

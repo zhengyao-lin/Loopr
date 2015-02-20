@@ -125,6 +125,7 @@ Loopr_Boolean st_character_literal_state;
  /* Punctuations */
 <INITIAL>"namespace"	return NAMESPACE;
 <INITIAL>"default"	return DEFAULT;
+<INITIAL>"import"		return IMPORT;
 <INITIAL>"void" {
 	Constant *constant;
 	constant = Asm_alloc_constant(CONST_KEYWORD);

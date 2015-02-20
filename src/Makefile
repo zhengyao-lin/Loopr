@@ -50,6 +50,6 @@ Interfaces/Interfaces.o:
 Natives/Natives.o:
 	cd Natives; $(MAKE);
 
-Main/interpreter_main.o: Main/interpreter_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Assembler.h
+Main/interpreter_main.o: Main/interpreter_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Assembler.h Includes/Versions.h
 Main/sandbox_main.o: Main/sandbox_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Interfaces.h Includes/Versions.h
 Main/compiler_main.o: Main/compiler_main.c SandBox/SandBox_pri.h Includes/MEM.h Includes/DBG.h Includes/UTL.h Includes/Assembler.h

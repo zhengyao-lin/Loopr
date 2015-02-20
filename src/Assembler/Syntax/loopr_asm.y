@@ -14,7 +14,7 @@
 }
 %token COLON COMMA LC RC LP RP LB RB LAB RAB DOT
 		NEXT_LINE NULL_LITERAL
-		NAMESPACE DEFAULT
+		NAMESPACE DEFAULT IMPORT
 %token <identifier>		IDENTIFIER
 %token <constant>		CHAR_LITERAL
 %token <constant>		DIGIT_LITERAL
@@ -47,6 +47,10 @@ namespace_unit
 			MEM_free(current_compiler->default_name_space);
 		}
 		current_compiler->default_name_space = $2;
+	}
+	| IMPORT package_name NEXT_LINE
+	{
+		Asm_chain_import_list($2);
 	}
 	;
 namespace_begin

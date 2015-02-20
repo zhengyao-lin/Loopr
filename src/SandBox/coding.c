@@ -43,7 +43,7 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"inc",		1,	0},
 	{"dec",		1,	0},
 
-	{"invoke",	0,	1},
+	{"invoke",	0,	0},
 	{"newarr",	1,	0},
 
 	{"goto",	0,	0},

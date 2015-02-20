@@ -30,8 +30,6 @@
 #define GET_BIT(num, type) \
 	((num) << (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8 \
 		   >> (Loopr_Type_Info[LPR_INT64].size - Loopr_Type_Info[type].size) * 8)
-
-#define get_visual_string(src) ((src) ? (src)->u.string_value : NULL_VISUAL)
 #define is_unsigned(type) \
 	(type % 2 != 0 ? LPR_True : LPR_False)
 
@@ -59,7 +57,7 @@ chain_string(Loopr_Ref *str1, Loopr_Ref *str2)
 static Loopr_Value
 Private_do_push_byte(Loopr_BasicType basic_type, Loopr_Byte *code, int *offset)
 {
-	Loopr_Value ret_value;
+	Loopr_Value ret_value = { 0 };
 
 	Loopr_byte_deserialize(&ret_value.int_value,
 						   code, Loopr_Type_Info[basic_type].size);
@@ -113,7 +111,7 @@ Private_load_local_variable(ExeEnvironment *env, int index, Loopr_Boolean *ref_f
 #ifdef SENSLTIVE
 	if ((index < 0 || index >= env->local_variable_map->count)
 		&& env->wflag != LPR_NOTHING) {
-		DBG_panic(("ldloc: Cannot find local variable\n"));	
+		DBG_panic(("ldloc: Cannot find local variable\n"));
 		return NULL;
 	}
 #endif
@@ -127,7 +125,7 @@ Private_expand_stack(Loopr_Stack *stack, int add)
 {
 	int rest;
 
-	rest = stack->alloc_size - stack->stack_pointer;
+	rest = stack->alloc_size - stack->stack_pointer - 2; /* the two offset is for callinfo and overflow check */
 	if (rest < add) {
 		stack->value = MEM_realloc(stack->value, sizeof(Loopr_Value) * (stack->alloc_size + add - rest));
 		stack->ref_flag = MEM_realloc(stack->ref_flag, sizeof(Loopr_Boolean) * (stack->alloc_size + add - rest));
@@ -245,13 +243,13 @@ Private_invoke_function(ExeEnvironment *env, int name_space, int index, int argc
 	call_info->pc = *pc_p;
 	call_info->caller = env->exe;
 
+	Private_expand_stack(&env->stack, callee->stack.alloc_size);
 	call_info->base = *base_p;
 	call_info->stack_pointer = env->stack.stack_pointer - argc;
 	call_info->local_list = env->local_variable_map;
 
 	/* reset stack */
 	env->stack.stack_pointer -= argc;
-	Private_expand_stack(&env->stack, callee->stack.alloc_size);
 	*base_p = env->stack.stack_pointer + argc + 1;
 	env->stack.stack_pointer = *base_p;
 
@@ -314,9 +312,8 @@ Private_convert_string_to_byte(Loopr_Char *str, char *controller)
 	return ret;
 }
 
-/*
 static void
-Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
+Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest, Loopr_Boolean *ref_flag)
 {
 	int length;
 	char buffer[CONV_STRING_BUFFER_SIZE];
@@ -325,29 +322,25 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 		return;
 	}
 
-	if (!dest) {
-		DBG_panic(("Convert null value\n"));
-	}
-
 	if (from == LPR_STRING) {
-		memcpy(&dest->u.int64_value,
-			   Private_convert_string_to_byte(dest->u.string_value, Loopr_Type_Info[to].scan_controller),
+		memcpy(&dest->int_value,
+			   Private_convert_string_to_byte(dest->ref_value->u.string_value,
+											  Loopr_Type_Info[to].scan_controller),
 			   Loopr_Type_Info[to].size);
-		dest->type = to;
+		*ref_flag = LPR_False;
 		return;
 	}
 
 	if (to == LPR_STRING) {
 		if (from >= LPR_BOOLEAN && from <= LPR_UINT64) {
-			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->u.int64_value);
-		} else if (from == LPR_SINGLE) {
-			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->u.single_value);
+			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->int_value);
 		} else if (from == LPR_DOUBLE) {
-			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->u.double_value);
+			sprintf(buffer, Loopr_Type_Info[from].scan_controller, dest->float_value);
 		}
 
-		dest->u.string_value = Loopr_conv_string(buffer);
-		dest->type = to;
+		dest->ref_value = Loopr_alloc_ref(LPR_STRING);
+		*ref_flag = LPR_True;
+		dest->ref_value->u.string_value = Loopr_conv_string(buffer);
 		return;
 	}
 
@@ -363,26 +356,19 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 		case LPR_UINT32:
 		case LPR_UINT64:
 			if (from <= LPR_UINT64) {
-				dest->u.int64_value = GET_BIT(dest->u.int64_value, to);
+				dest->int_value = GET_BIT(dest->int_value, to);
 			} else if (from == LPR_SINGLE) {
-				dest->u.int64_value = GET_BIT((Loopr_Int64)dest->u.single_value, to);
+				dest->int_value = GET_BIT((Loopr_Int64)dest->float_value, to);
 			} else if (from == LPR_DOUBLE) {
-				dest->u.int64_value = GET_BIT((Loopr_Int64)dest->u.double_value, to);
+				dest->int_value = GET_BIT((Loopr_Int64)dest->float_value, to);
 			}
-			break;
-		case LPR_SINGLE:
-			if (from == LPR_DOUBLE) {
-				dest->u.single_value = (Loopr_Single)dest->u.double_value;
-			} else if (from <= LPR_UINT64) {
-				dest->u.single_value = (Loopr_Single)GET_BIT(dest->u.int64_value, from);
-			}
+			*ref_flag = LPR_False;
 			break;
 		case LPR_DOUBLE:
-			if (from == LPR_SINGLE) {
-				dest->u.double_value = (Loopr_Double)dest->u.single_value;
-			} else if (from <= LPR_UINT64) {
-				dest->u.double_value = (Loopr_Double)GET_BIT(dest->u.int64_value, from);
+			if (from <= LPR_UINT64) {
+				dest->float_value = (Loopr_Double)GET_BIT(dest->int_value, from);
 			}
+			*ref_flag = LPR_False;
 			break;
 		case LPR_OBJECT:
 			DBG_panic(("Convert Object type: Use bx/unbx instead\n"));
@@ -393,11 +379,9 @@ Private_convert(Loopr_BasicType from, Loopr_BasicType to, Loopr_Value *dest)
 					   Loopr_Type_Info[to].assembly_name));
 			break;
 	}
-	dest->type = to;
 
 	return;
 }
-*/
 
 #define LOWER_LEVEL ("|--\t")
 
@@ -547,14 +531,14 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				ST_REF(env->stack, 1) = Loopr_create_null();
 				env->stack.stack_pointer++;
 				pc++;
-				break;	
+				break;
 			}
 			case LPR_LD_STRING: {
 				ST_REF(env->stack, 1) = Loopr_create_string(&(env->exe->code[pc + 1]), &arg1);
 				ST_flag(env->stack, 1) = LPR_True;
 				env->stack.stack_pointer++;
 				pc += 1 + arg1;
-				break;				
+				break;
 			}
 			case LPR_LD_LOC: {
 				Loopr_byte_deserialize(&arg1,
@@ -578,11 +562,12 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
-			/*case LPR_CONVERT: {
-				Private_convert(ST_TYPE(env->stack, 0), env->exe->code[pc + 1], ST(env->stack, 0));
-				pc += 2;
+			case LPR_CONVERT: {
+				Private_convert(env->exe->code[pc + 1], env->exe->code[pc + 2],
+								&ST(env->stack, 0), &ST_flag(env->stack, 0));
+				pc += 3;
 				break;
-			}*/
+			}
 			case LPR_BOXING: {
 				ST_REF(env->stack, 0) = Loopr_create_object(ST(env->stack, 0), ST_flag(env->stack, 0));
 				ST_flag(env->stack, 0) = LPR_True;

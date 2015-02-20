@@ -38,6 +38,7 @@
 	((value)->type == LPR_STRING \
   || (value)->type == LPR_OBJECT \
   || (value)->type == LPR_ARRAY)
+#define get_visual_string(src) ((src) ? (src)->u.string_value : NULL_VISUAL)
 
 static Loopr_Value NULL_REF = { NULL };
 

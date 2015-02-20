@@ -123,7 +123,7 @@ Gencode_push_constant(ByteContainer *env, Constant *constant)
 			Coding_push_code(env, LPR_NULL_CODE,
 							 (Loopr_Byte *)constant->u.string_value,
 							 strlen(constant->u.string_value) + 1);
-			break;	
+			break;
 		case CONST_LABEL:
 			Label_ref(env, constant->u.string_value, env->next);
 			Coding_push_code(env, LPR_NULL_CODE,

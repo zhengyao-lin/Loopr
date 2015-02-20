@@ -210,7 +210,7 @@ decl_only_statement
 	;
 statement
 	: label_statement
-	| decl_only_statement	
+	| decl_only_statement
 	| dot_bytecode constant_list_opt NEXT_LINE
 	{
 		$$ = Asm_create_statement(NULL, $1, $2);

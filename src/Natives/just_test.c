@@ -17,7 +17,7 @@ proc_print(ExeEnvironment *env, int argc, Loopr_Value *argv)
 		DBG_panic(("Native: print: Arguments less than one"));
 	}
 
-	printf("%ls", argv[0].ref_value->u.string_value);
+	printf("%ls", get_visual_string(argv[0].ref_value));
 
 	return NULL_REF;
 }

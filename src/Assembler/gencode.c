@@ -7,6 +7,7 @@
 
 static int nullv = 0x0;
 static int not_nullv = LPR_True;
+static ByteContainer *top_env = NULL;
 
 struct ConstTypeMapping_tag {
 	ConstantType const_type;
@@ -479,15 +480,23 @@ Gencode_fix_function_invoke(ByteContainer *env, PackageName *pkgn, char *name, i
 
 	index = Gencode_get_function_index_name_space(env, name, name_space);
 	if (index < 0) {
+		for (pos = top_env->sub_name_space[compiler->current_name_space_index]->using_list;
+			 pos; pos = pos->next) {
+			if ((index = Gencode_get_function_index_name_space(env, name, pos->name_space)) >= 0) {
+				name_space = pos->name_space;
+				break;
+			}
+		}
 		for (pos = env->using_list; pos; pos = pos->next) {
 			if ((index = Gencode_get_function_index_name_space(env, name, pos->name_space)) >= 0) {
+				name_space = pos->name_space;
 				break;
 			}
 		}
 		if (index < 0) {
 			DBG_panic(("Undefined function \"%s\"\n", name));
+			return;
 		}
-		return;
 	}
 
 	Coding_push_code(env, LPR_INVOKE, NULL, 0);
@@ -662,6 +671,7 @@ Gencode_compile(Asm_Compiler *compiler)
 
 	Asm_set_current_compiler(compiler);
 	container = Coding_init_coding_env();
+	top_env = container;
 
 	default_index = Gencode_search_name_space_index(compiler->default_name_space);
 

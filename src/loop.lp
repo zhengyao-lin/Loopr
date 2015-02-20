@@ -1,15 +1,15 @@
 default Main
 import solve
 namespace SubMain {
+	.function void non_function() {
+		ldstr "you big shit!"
+		popstr
+		//invoke non_function2, 0
+	}
 	.function void non_function2() {
 		ldstr "yes!!!"
 		popstr
 		invoke <SubMain2>non_function2, 0
-	}
-	.function void non_function() {
-		ldstr "hello, world!!!"
-		popstr
-		invoke non_function2, 0
 	}
 }
 namespace SubMain2 {
@@ -21,6 +21,7 @@ namespace SubMain2 {
 namespace Main {
 	.entry
 	.using SubMain
+	.using Solve
 
 	goto __TRIMUL_END //jump throw function
 	__TRIMUL: //Macro, multiply the last three stacks
@@ -53,6 +54,7 @@ namespace Main {
 
 		invoke print, 1
 		invoke non_function, 0
+
 		ret
 	}
 
@@ -99,11 +101,7 @@ namespace Main {
 		ldarg.0
 		popstr
 		ret
-		//.function void non_function(){}
 	}
-
-	.function void non_function(){}
-
 	LOOP1:
 
 	invoke "hello",0
@@ -175,8 +173,8 @@ IS_TRUE:
 	invoke println, 1
 END:
 
-	ldc.10
-	ldc.10
-	invoke <Solve>Recursive, 2
+	ldb 10
+	ldb 10
+	invoke Recursive, 2
 	popb
 }

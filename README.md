@@ -5,7 +5,7 @@
 ##Build & Test
 
 ###Linux?<br/>
-First, clone the source code with the clone URL above
+First, clone the source code with the clone URL above<br/>
 Then, compile it:<br/>
 
     #cd into the source dir

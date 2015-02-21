@@ -15,8 +15,8 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"ldarr",	1,	0},
 
 	{"conv",	1,	0},
-	{"bx",		1,	0},
-	{"unbx",	1,	0},
+	{"box",		1,	0},
+	{"unbox",	1,	0},
 
 	{"pop",		1,	-1},
 	{"popb",	1,	-1},

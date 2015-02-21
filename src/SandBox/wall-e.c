@@ -203,7 +203,7 @@ void
 Walle_dispose_byte_container(ByteContainer *env, Loopr_Boolean flag_clean_code)
 {
 	int i;
-	
+
 	if (!env) {
 		return;
 	}

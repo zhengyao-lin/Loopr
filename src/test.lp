@@ -32,7 +32,7 @@ namespace TestMain {
 			ret
 		}
 		ldstr "false"
-		
+
 		ret
 	}
 
@@ -121,6 +121,13 @@ namespace TestMain {
 	conv.i32.str
 	invoke println, 1
 
+	ldstr "   box&unbox: "
+	invoke print, 1
+	ldstr "Orignal Data"
+	box
+	unbox
+	invoke println, 1
+
 	/******** Logic ********/
 	invoke new_line, 0
 	ldstr "LOGIC:\n"
@@ -134,10 +141,10 @@ namespace TestMain {
 	invoke BoolToString, 1
 	invoke println, 1
 
-	ldstr "   120 == 120 ... "
+	ldstr "   3.1 == 3.1 ... "
 	invoke print, 1
-	ldb 120
-	ldb 120
+	ldb 3.1
+	ldb 3.1
 	eq
 	invoke BoolToString, 1
 	invoke println, 1
@@ -307,17 +314,28 @@ IF_END:
 	ldstr "send from TestMain"
 	invoke <TestSpace>test, 1
 
+	.using TestSpace
+	invoke using_test, 1
+
+	invoke <main>test, 0
+
 	ldstr "\npress a key to exit..."
 	invoke print, 1
 	invoke getc, 0
 }
-
+import test_sub
 namespace TestSpace {
 	.using TestMain
 	.function test(str) {
 		ldstr "   namespace TestSpace recieved: "
 		ldarg.0
 		addstr
+		invoke println, 0
+
+		ret
+	}
+	.function using_test() {
+		ldstr "   I'm the one you used..."
 		invoke println, 0
 
 		ret

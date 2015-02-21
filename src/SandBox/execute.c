@@ -25,6 +25,16 @@
 #define ST_REF(stack, offset) \
 	((stack).value[(stack).stack_pointer + (offset)].ref_value)
 
+#define ST_WRITE_INTEGER(stack, offset, v) \
+	((stack).value[(stack).stack_pointer + (offset)].int_value = v, \
+	 (stack).ref_flag[(stack).stack_pointer + (offset)] = LPR_False)
+#define ST_WRITE_FLOAT(stack, offset, v) \
+	((stack).value[(stack).stack_pointer + (offset)].float_value = v, \
+	 (stack).ref_flag[(stack).stack_pointer + (offset)] = LPR_False)
+#define ST_WRITE_REF(stack, offset, v) \
+	((stack).value[(stack).stack_pointer + (offset)].ref_value = v, \
+	 (stack).ref_flag[(stack).stack_pointer + (offset)] = LPR_True)
+
 #define TYPE_CMP(t1, t2) \
 	((t1) >= (t2) ? (t1) : (t2))
 #define GET_BIT(num, type) \
@@ -276,9 +286,9 @@ Private_do_return(ExeEnvironment *env, int *pc_p, int *base_p)
 	Loopr_Boolean flag;
 	CallInfo *call_info;
 
-	call_info = env->stack.value[*base_p].call_info;
-	ret_value = env->stack.value[env->stack.stack_pointer];
-	flag = env->stack.ref_flag[env->stack.stack_pointer];
+	call_info = ST_i(env->stack, *base_p).call_info;
+	ret_value = ST(env->stack, 0);
+	flag = ST_flag(env->stack, 0);
 
 	env->stack.stack_pointer = call_info->stack_pointer;
 	env->exe = call_info->caller;
@@ -288,7 +298,7 @@ Private_do_return(ExeEnvironment *env, int *pc_p, int *base_p)
 	Private_dispose_arguments(env->local_variable_map);
 
 	env->local_variable_map = call_info->local_list;
-	env->stack.ref_flag[env->stack.stack_pointer + 1] = flag;
+	ST_flag(env->stack, 1) = flag;
 
 	free(call_info);
 
@@ -514,28 +524,29 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 
 		switch (env->exe->code[pc]) {
 			case LPR_LD_BYTE: {
-				ST(env->stack, 1) = Private_do_push_byte(env->exe->code[pc + 1], &env->exe->code[pc + 2], &arg1);
+				ST(env->stack, 1) = Private_do_push_byte(env->exe->code[pc + 1],
+														 &env->exe->code[pc + 2],
+														 &arg1);
 				ST_flag(env->stack, 1) = LPR_False;
 				env->stack.stack_pointer++;
 				pc += 2 + arg1;
 				break;
 			}
 			case LPR_LD_CONST: {
-				ST_INTEGER(env->stack, 1) = env->exe->code[pc + 1];
-				ST_flag(env->stack, 1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, 1, env->exe->code[pc + 1]);
 				env->stack.stack_pointer++;
 				pc += 2;
 				break;
 			}
 			case LPR_LD_NULL: {
-				ST_REF(env->stack, 1) = Loopr_create_null();
+				ST_WRITE_REF(env->stack, 1, Loopr_create_null());
 				env->stack.stack_pointer++;
 				pc++;
 				break;
 			}
 			case LPR_LD_STRING: {
-				ST_REF(env->stack, 1) = Loopr_create_string(&(env->exe->code[pc + 1]), &arg1);
-				ST_flag(env->stack, 1) = LPR_True;
+				ST_WRITE_REF(env->stack, 1,
+							 Loopr_create_string(&(env->exe->code[pc + 1]), &arg1));
 				env->stack.stack_pointer++;
 				pc += 1 + arg1;
 				break;
@@ -543,7 +554,8 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_LD_LOC: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				ST(env->stack, 1) = Private_load_local_variable(env, arg1, &ST_flag(env->stack, 1));
+				ST(env->stack, 1) = Private_load_local_variable(env, arg1,
+																&ST_flag(env->stack, 1));
 				env->stack.stack_pointer++;
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
@@ -558,7 +570,8 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			case LPR_LD_ARRAY: {
 				Loopr_byte_deserialize(&arg1,
 						  			   &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				ST(env->stack, 0) = Private_get_array(ST_REF(env->stack, 0), arg1, &ST_flag(env->stack, 0));
+				ST(env->stack, 0) = Private_get_array(ST_REF(env->stack, 0), arg1,
+													  &ST_flag(env->stack, 0));
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
@@ -569,8 +582,9 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				break;
 			}
 			case LPR_BOXING: {
-				ST_REF(env->stack, 0) = Loopr_create_object(ST(env->stack, 0), ST_flag(env->stack, 0));
-				ST_flag(env->stack, 0) = LPR_True;
+				ST_WRITE_REF(env->stack, 0,
+							 Loopr_create_object(ST(env->stack, 0),
+												 ST_flag(env->stack, 0)));
 				pc++;
 				break;
 			}

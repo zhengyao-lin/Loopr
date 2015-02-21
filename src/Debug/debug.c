@@ -13,7 +13,8 @@ static struct DBG_Controller_tag st_default_controller = {
     NULL, /*stderr,*/
     INT_MAX,
 };
-DBG_Controller  dbg_default_controller = &st_default_controller;
+
+DBG_Controller dbg_default_controller = &st_default_controller;
 
 DBG_Controller
 DBG_create_controller_func(void)

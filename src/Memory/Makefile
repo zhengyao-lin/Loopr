@@ -1,5 +1,5 @@
 TARGET = mem.o
-CFLAGS = -c -g -Wall
+CFLAGS = -fPIC -c -g -Wall
 OBJS = memory.o storage.o
 
 $(TARGET):$(OBJS)

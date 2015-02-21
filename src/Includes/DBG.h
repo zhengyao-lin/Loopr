@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <limits.h>
 
 typedef struct DBG_Controller_tag *DBG_Controller;
 void DBG_set(DBG_Controller controller, char *file, int line);

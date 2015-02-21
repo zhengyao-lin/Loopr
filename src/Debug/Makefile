@@ -1,5 +1,5 @@
 TARGET = dbg.o
-CFLAGS = -c -g -Wall -DDBG_NO_DEBUG
+CFLAGS =  -fPIC -c -g -Wall -DDBG_NO_DEBUG
 OBJS = debug.o
 INCLUDES = -I../Includes
 

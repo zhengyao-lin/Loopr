@@ -18,4 +18,4 @@ execute.o: execute.c SandBox_pri.h ../Includes/LBS.h ../Includes/UTL.h ../Includ
 value.o: value.c SandBox_pri.h ../Includes/LBS.h ../Includes/MEM.h ../Includes/UTL.h ../Includes/DBG.h
 coding.o: coding.c SandBox_pri.h ../Includes/LBS.h ../Includes/MEM.h ../Includes/DBG.h
 wall-e.o: wall-e.c SandBox_pri.h ../Includes/LBS.h ../Includes/MEM.h
-native.o: native.c SandBox_pri.h ../Includes/LBS.h ../Includes/UTL.h ../Includes/MEM.h ../Includes/DBG.h
+native.o: native.c SandBox_pri.h ../Includes/LBS.h ../Includes/UTL.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/Versions.h

@@ -97,6 +97,7 @@ NativeFunction *Native_search_function_by_name(char *name);
 Loopr_NativeCallee Native_search_callee_by_magic(Loopr_Int64 magic);
 int Native_load_function(char *name, Loopr_Int64 magic, Loopr_NativeCallee *callee);
 void Native_dispose_all();
+void Native_load_lib(char *file_path);
 
 extern ByteInfo Loopr_Byte_Info[];
 extern TypeInfo Loopr_Type_Info[];

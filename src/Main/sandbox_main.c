@@ -9,8 +9,6 @@
 #include "Interfaces.h"
 #include "Versions.h"
 
-void Natives_load_all();
-
 int main(int argc, char **argv)
 {
 	FILE *fp = NULL;
@@ -30,7 +28,7 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	Natives_load_all();
+	Native_load_lib("Natives/Natives.so");
 	env = ISerialize_read_exe_environment(fp);
 	fclose(fp);
 

@@ -11,7 +11,6 @@
 
 ByteContainer *Gencode_compile(Asm_Compiler *compiler);
 int yylex_destroy();
-void Natives_load_all();
 
 int main(int argc, char **argv)
 {
@@ -32,7 +31,7 @@ int main(int argc, char **argv)
 		fp = stdin;
 	}
 
-	Natives_load_all();
+	Native_load_lib("Natives/Natives.so");
 	compiler = Asm_compile_file(fp);
 	fclose(fp);
 

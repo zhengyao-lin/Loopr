@@ -12,7 +12,6 @@
 
 ByteContainer *Gencode_compile(Asm_Compiler *compiler);
 int yylex_destroy();
-void Natives_load_all();
 
 int main(int argc, char **argv)
 {
@@ -40,7 +39,7 @@ int main(int argc, char **argv)
 		src = stdin;
 	}
 
-	Natives_load_all();
+	Native_load_lib("Natives/Natives.so");
 	compiler = Asm_compile_file(src);
 	container = Gencode_compile(compiler);
 	ISerialize_save_exe_environment(dest, Coding_init_exe_env(container, LPR_ANYTHING));

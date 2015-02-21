@@ -295,7 +295,13 @@ typedef struct ExeEnvironment_tag {
 	struct ExeEnvironment_tag **function;
 } ExeEnvironment;
 
+typedef struct NativeFunctionInfo_tag {
+	int count;
+	struct NativeFunction_tag *info_list;
+} NativeFunctionInfo;
+
 typedef Loopr_Value (*Loopr_NativeCallee)(ExeEnvironment *env, int argc, Loopr_Value *argv);
+typedef NativeFunctionInfo (*Loopr_NativeLoader)(void);
 
 typedef struct NativeFunction_tag {
 	char *name;

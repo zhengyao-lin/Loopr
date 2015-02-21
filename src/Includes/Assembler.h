@@ -1,5 +1,9 @@
+#ifndef _ASM_H_
+#define _ASM_H_
+
 #include <stdio.h>
 #include <stdlib.h>
+#include "LBS.h"
 
 #define ASM_malloc(size) (malloc((size)))
 #define ASM_realloc(p, size) (realloc((p), (size)))
@@ -176,3 +180,5 @@ void Asm_reset_string_literal_buffer(void);
 char *Asm_close_string_literal(void);
 int Asm_close_character_literal(void);
 char *Asm_create_identifier(char *str);
+
+#endif

@@ -1,4 +1,8 @@
 /* Loopr Bytecode Standard */
+
+#ifndef _LBS_H_
+#define _LBS_H_
+
 #include <wchar.h>
 #include <inttypes.h>
 
@@ -31,10 +35,18 @@ typedef enum {
 	LPR_STORE_LOC,
 	LPR_STORE_ARRAY,
 
+	LPR_EQUAL_FLOAT,
 	LPR_EQUAL,
+	LPR_NOT_EQUAL_FLOAT,
 	LPR_NOT_EQUAL,
+	LPR_GREATER_THAN_FLOAT,
 	LPR_GREATER_THAN,
+	LPR_LESS_THAN_FLOAT,
 	LPR_LESS_THAN,
+	LPR_LESS_OR_EQUAL_FLOAT,
+	LPR_LESS_OR_EQUAL,
+	LPR_GREATER_OR_EQUAL_FLOAT,
+	LPR_GREATER_OR_EQUAL,
 
 	LPR_BRANCH,
 	LPR_DUPLICATE,
@@ -48,10 +60,14 @@ typedef enum {
 	LPR_MUL_BYTE,
 	LPR_DIV_FLOAT,
 	LPR_DIV_BYTE,
+	LPR_MOD_FLOAT,
+	LPR_MOD_BYTE,
 	LPR_INC_FLOAT,
 	LPR_INC,
 	LPR_DEC_FLOAT,
 	LPR_DEC,
+	LPR_MINUS_FLOAT,
+	LPR_MINUS,
 
 	LPR_INVOKE,
 	LPR_NEW_ARRAY,
@@ -286,3 +302,5 @@ typedef struct NativeFunction_tag {
 	Loopr_Int64 magic;
 	Loopr_NativeCallee callee;
 } NativeFunction;
+
+#endif

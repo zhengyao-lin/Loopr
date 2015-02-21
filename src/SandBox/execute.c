@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+#include "LBS.h"
 #include "DBG.h"
 #include "UTL.h"
 #include "MEM.h"
@@ -633,30 +635,86 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc += 1 + sizeof(Loopr_Int32);
 				break;
 			}
+			case LPR_EQUAL_FLOAT: {
+				ST_WRITE_FLOAT(env->stack, -1,
+							   (ST_FLOAT(env->stack, -1) == ST_FLOAT(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
 			case LPR_EQUAL: {
-				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) == ST_INTEGER(env->stack, 0));
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 (ST_INTEGER(env->stack, -1) == ST_INTEGER(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_NOT_EQUAL_FLOAT: {
+				ST_WRITE_FLOAT(env->stack, -1,
+							   (ST_FLOAT(env->stack, -1) != ST_FLOAT(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_NOT_EQUAL: {
-				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) != ST_INTEGER(env->stack, 0));
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 (ST_INTEGER(env->stack, -1) != ST_INTEGER(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_GREATER_THAN_FLOAT: {
+				ST_WRITE_FLOAT(env->stack, -1,
+							   (ST_FLOAT(env->stack, -1) > ST_FLOAT(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_GREATER_THAN: {
-				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) > ST_INTEGER(env->stack, 0));
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 (ST_INTEGER(env->stack, -1) > ST_INTEGER(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_LESS_THAN_FLOAT: {
+				ST_WRITE_FLOAT(env->stack, -1,
+							   (ST_FLOAT(env->stack, -1) < ST_FLOAT(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_LESS_THAN: {
-				ST_INTEGER(env->stack, -1) = (ST_INTEGER(env->stack, -1) < ST_INTEGER(env->stack, 0));
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 (ST_INTEGER(env->stack, -1) < ST_INTEGER(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_LESS_OR_EQUAL_FLOAT: {
+				ST_WRITE_FLOAT(env->stack, -1,
+							   (ST_FLOAT(env->stack, -1) <= ST_FLOAT(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_LESS_OR_EQUAL: {
+				ST_WRITE_INTEGER(env->stack, -1,
+								(ST_INTEGER(env->stack, -1) <= ST_INTEGER(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_GREATER_OR_EQUAL_FLOAT: {
+				ST_WRITE_FLOAT(env->stack, -1,
+							   (ST_FLOAT(env->stack, -1) >= ST_FLOAT(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_GREATER_OR_EQUAL: {
+				ST_WRITE_INTEGER(env->stack, -1,
+								(ST_INTEGER(env->stack, -1) >= ST_INTEGER(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
@@ -678,64 +736,78 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				break;
 			}
 			case LPR_ADD_BYTE: {
-				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) + ST_INTEGER(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 ST_INTEGER(env->stack, -1) + ST_INTEGER(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_ADD_FLOAT: {
-				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) + ST_FLOAT(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_FLOAT(env->stack, -1,
+							   ST_FLOAT(env->stack, -1) + ST_FLOAT(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_ADD_STRING: {
-				ST_REF(env->stack, -1) = chain_string(ST_REF(env->stack, -1), ST_REF(env->stack, 0));
-				ST_flag(env->stack, -1) = LPR_True;
+				ST_WRITE_REF(env->stack, -1,
+							 chain_string(ST_REF(env->stack, -1), ST_REF(env->stack, 0)));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_SUB_FLOAT: {
-				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) - ST_FLOAT(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_FLOAT(env->stack, -1,
+							   ST_FLOAT(env->stack, -1) - ST_FLOAT(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_SUB_BYTE: {
-				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) - ST_INTEGER(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 ST_INTEGER(env->stack, -1) - ST_INTEGER(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_MUL_FLOAT: {
-				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) * ST_FLOAT(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_FLOAT(env->stack, -1,
+							   ST_FLOAT(env->stack, -1) * ST_FLOAT(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_MUL_BYTE: {
-				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) * ST_INTEGER(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 ST_INTEGER(env->stack, -1) * ST_INTEGER(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_DIV_FLOAT: {
-				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) / ST_FLOAT(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_FLOAT(env->stack, -1,
+							   ST_FLOAT(env->stack, -1) / ST_FLOAT(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
 			}
 			case LPR_DIV_BYTE: {
-				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) / ST_INTEGER(env->stack, 0);
-				ST_flag(env->stack, -1) = LPR_False;
+				ST_WRITE_INTEGER(env->stack, -1,
+								 ST_INTEGER(env->stack, -1) / ST_INTEGER(env->stack, 0));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_MOD_FLOAT: {
+				ST_WRITE_FLOAT(env->stack, -1,
+							   fmod(ST_FLOAT(env->stack, -1), ST_FLOAT(env->stack, 0)));
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_MOD_BYTE: {
+				ST_WRITE_INTEGER(env->stack, -1,
+								 ST_INTEGER(env->stack, -1) % ST_INTEGER(env->stack, 0));
 				env->stack.stack_pointer--;
 				pc++;
 				break;
@@ -757,6 +829,16 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			}
 			case LPR_DEC: {
 				ST_INTEGER(env->stack, 0)--;
+				pc++;
+				break;
+			}
+			case LPR_MINUS_FLOAT: {
+				ST_FLOAT(env->stack, 0) = -ST_FLOAT(env->stack, 0);
+				pc++;
+				break;
+			}
+			case LPR_MINUS: {
+				ST_INTEGER(env->stack, 0) = -ST_INTEGER(env->stack, 0);
 				pc++;
 				break;
 			}

@@ -2,9 +2,9 @@
 #include <string.h>
 #include <wchar.h>
 #include <limits.h>
+#include "LBS.h"
 #include "DBG.h"
 #include "MEM.h"
-#include "LBS.h"
 
 size_t
 Loopr_wcslen(wchar_t *str)

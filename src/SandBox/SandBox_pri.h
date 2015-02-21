@@ -1,3 +1,6 @@
+#ifndef _SANDBOX_PRI_H_
+#define _SANDBOX_PRI_H_
+
 #include "LBS.h"
 
 #define GET_2BYTE_INT(p) (((p)[0] << 8) + (p)[1])
@@ -97,3 +100,5 @@ void Native_dispose_all();
 
 extern ByteInfo Loopr_Byte_Info[];
 extern TypeInfo Loopr_Type_Info[];
+
+#endif

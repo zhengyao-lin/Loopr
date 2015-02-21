@@ -178,7 +178,7 @@ Loopr_Boolean st_character_literal_state;
 	return DIGIT_LITERAL;
 }
 
-<INITIAL>{DIGIT}+\.{DIGIT}+{FSUFFIX}? {
+<INITIAL>{PM}?{DIGIT}+\.{DIGIT}+{FSUFFIX}? {
 	get_float_const();
 	return FLOAT_LITERAL;
 }

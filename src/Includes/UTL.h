@@ -1,3 +1,6 @@
+#ifndef _UTL_H_
+#define _UTL_H_
+
 #include <stdio.h>
 #include <wchar.h>
 
@@ -16,3 +19,5 @@ wchar_t *Loopr_wcsdup(const wchar_t *src);
 char Loopr_wctochar(wchar_t src);
 int Loopr_print_wcs(FILE *fp, wchar_t *str);
 int Loopr_print_wcs_ln(FILE *fp, wchar_t *str);
+
+#endif

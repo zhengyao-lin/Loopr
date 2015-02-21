@@ -1,6 +1,7 @@
-#ifndef PUBLIC_DBG_H_INCLUDED
-#define PUBLIC_DBG_H_INCLUDED
-#include <stdio.h>      
+#ifndef _DBG_H_
+#define _DBG_H_
+
+#include <stdio.h>
 #include <stdarg.h>
 
 typedef struct DBG_Controller_tag *DBG_Controller;
@@ -51,4 +52,5 @@ void DBG_set_debug_write_fp_func(DBG_Controller controller, FILE *fp);
 void DBG_assert_func(char *fmt, ...);
 void DBG_panic_func(char *fmt, ...);
 void DBG_debug_write_func(int level, char *fmt, ...);
-#endif /* PUBLIC_DBG_H_INCLUDED */
+
+#endif

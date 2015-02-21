@@ -13,4 +13,4 @@ clean:
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) $*.c
 
-just_test.o: just_test.c ../SandBox/SandBox_pri.h ../Includes/MEM.h ../Includes/DBG.h
+just_test.o: just_test.c ../SandBox/SandBox_pri.h ../Includes/MEM.h ../Includes/DBG.h ../Includes/LBS.h

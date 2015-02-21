@@ -1,8 +1,9 @@
 #include <string.h>
-#include "SandBox_pri.h"
+#include "LBS.h"
 #include "MEM.h"
 #include "DBG.h"
 #include "UTL.h"
+#include "SandBox_pri.h"
 
 TypeInfo Loopr_Type_Info[] = {
 	{"dummy",	"dummy", 		NULL,		-1},

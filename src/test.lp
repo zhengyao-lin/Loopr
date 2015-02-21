@@ -145,7 +145,7 @@ namespace TestMain {
 	invoke print, 1
 	ldb 3.1
 	ldb 3.1
-	eq
+	eqf
 	invoke BoolToString, 1
 	invoke println, 1
 
@@ -165,11 +165,11 @@ namespace TestMain {
 	invoke BoolToString, 1
 	invoke println, 1
 
-	ldstr "   12 > 13    ... "
+	ldstr "   -2.0 > 1.0 ... "
 	invoke print, 1
-	ldb 12
-	ldb 13
-	gt
+	ldb -2.0
+	ldb 1.0
+	gtf
 	invoke BoolToString, 1
 	invoke println, 1
 

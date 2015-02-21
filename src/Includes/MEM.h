@@ -1,5 +1,5 @@
-#ifndef PUBLIC_MEM_H
-#define PUBLIC_MEM_H
+#ifndef _MEM_H
+#define _MEM_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,4 +80,4 @@ void MEM_check_all_blocks_func(MEM_Controller controller,
 #define MEM_check_all_blocks() ((void)0)
 #endif /* DEBUG */
 
-#endif  /* PUBLIC_MEM_H */
+#endif

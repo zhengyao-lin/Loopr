@@ -21,12 +21,12 @@ y.tab.c : loopr_asm.y
 	yacc -dv loopr_asm.y
 lex.yy.c : loopr_asm.l loopr_asm.y y.tab.h
 	lex loopr_asm.l
-y.tab.o: y.tab.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h
+y.tab.o: y.tab.c ../../Includes/Assembler.h ../../Includes/DBG.h ../../Includes/MEM.h ../../Includes/LBS.h
 	$(CC) -c -g $*.c $(INCLUDES)
-lex.yy.o: lex.yy.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h
+lex.yy.o: lex.yy.c ../../Includes/Assembler.h ../../Includes/DBG.h ../../Includes/LBS.h
 	$(CC) -c -g  $*.c $(INCLUDES)
 .c.o:
 	$(CC) $(CFLAGS) $*.c $(INCLUDES)
 
-create.o: create.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/DBG.h ../../Includes/LBS.h 
-string.o: string.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/LBS.h ../../Includes/UTL.h
+create.o: create.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/DBG.h ../../Includes/LBS.h
+string.o: string.c ../../Includes/Assembler.h ../../Includes/MEM.h ../../Includes/DBG.h ../../Includes/LBS.h ../../Includes/UTL.h

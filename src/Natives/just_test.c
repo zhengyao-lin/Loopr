@@ -1,7 +1,8 @@
 #include <stdio.h>
-#include "SandBox_pri.h"
+#include "LBS.h"
 #include "MEM.h"
 #include "DBG.h"
+#include "SandBox_pri.h"
 
 Loopr_Value
 proc_hello_world(ExeEnvironment *env, int argc, Loopr_Value *argv)

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "LBS.h"
 #include "DBG.h"
 #include "UTL.h"
 #include "MEM.h"

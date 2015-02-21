@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "MEM.h"
-#include "UTL.h"
 #include "LBS.h"
+#include "MEM.h"
 #include "DBG.h"
+#include "UTL.h"
 #include "Assembler.h"
 
 #define STRING_ALLOC_SIZE       (256)
@@ -71,7 +71,7 @@ Asm_close_character_literal(void)
     } else if (new_str_len > 1) {
 		DBG_panic(("line %d: Too long character literal\n", get_current_line_number()));
     }
-    
+
     Loopr_mbstowcs(st_string_literal_buffer, buf);
 
     return buf[0];

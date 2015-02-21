@@ -1,7 +1,8 @@
 #include <string.h>
-#include "SandBox_pri.h"
+#include "LBS.h"
 #include "MEM.h"
 #include "DBG.h"
+#include "SandBox_pri.h"
 
 ByteInfo Loopr_Byte_Info[] = {
 	{"dummy",	0,	0},
@@ -26,10 +27,18 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"stloc",	1,	-1},
 	{"starr",	2,	-2},
 
-	{"eq",		2,	-1}, /* ==	equal */
-	{"ne",		2,	-1}, /* !=	not equal */
-	{"gt",		2,	-1}, /* >	greater than */
-	{"lt",		2,	-1}, /* <	less than */
+	{"eqf",		2,	-1},
+	{"eq",		2,	-1},
+	{"nef",		2,	-1},
+	{"ne",		2,	-1},
+	{"gtf",		2,	-1},
+	{"gt",		2,	-1},
+	{"ltf",		2,	-1},
+	{"lt",		2,	-1},
+	{"lef",		2,	-1},
+	{"le",		2,	-1},
+	{"gef",		2,	-1},
+	{"ge",		2,	-1},
 
 	{"br",		1,	-1},
 	{"dup",		1,	1},
@@ -43,10 +52,14 @@ ByteInfo Loopr_Byte_Info[] = {
 	{"mul",		2,	-1},
 	{"divf",	2,	-1},
 	{"div",		2,	-1},
+	{"modf",	2,	-1},
+	{"mod",		2,	-1},
 	{"incf",	1,	0},
 	{"inc",		1,	0},
 	{"decf",	1,	0},
 	{"dec",		1,	0},
+	{"minf",	1,	0},
+	{"min",		1,	0},
 
 	{"invoke",	0,	0},
 	{"newarr",	1,	0},

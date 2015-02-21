@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "LBS.h"
-#include "Assembler.h"
 #include "MEM.h"
+#include "Assembler.h"
 #include "Versions.h"
 
 Asm_Compiler *__current_compiler;

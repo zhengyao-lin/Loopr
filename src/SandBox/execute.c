@@ -684,8 +684,22 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc++;
 				break;
 			}
+			case LPR_SUB_FLOAT: {
+				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) - ST_FLOAT(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
 			case LPR_SUB_BYTE: {
 				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) - ST_INTEGER(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
+			case LPR_MUL_FLOAT: {
+				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) * ST_FLOAT(env->stack, 0);
 				ST_flag(env->stack, -1) = LPR_False;
 				env->stack.stack_pointer--;
 				pc++;
@@ -698,6 +712,13 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc++;
 				break;
 			}
+			case LPR_DIV_FLOAT: {
+				ST_FLOAT(env->stack, -1) = ST_FLOAT(env->stack, -1) / ST_FLOAT(env->stack, 0);
+				ST_flag(env->stack, -1) = LPR_False;
+				env->stack.stack_pointer--;
+				pc++;
+				break;
+			}
 			case LPR_DIV_BYTE: {
 				ST_INTEGER(env->stack, -1) = ST_INTEGER(env->stack, -1) / ST_INTEGER(env->stack, 0);
 				ST_flag(env->stack, -1) = LPR_False;
@@ -705,8 +726,18 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 				pc++;
 				break;
 			}
+			case LPR_INC_FLOAT: {
+				ST_FLOAT(env->stack, 0)++;
+				pc++;
+				break;
+			}
 			case LPR_INC: {
 				ST_INTEGER(env->stack, 0)++;
+				pc++;
+				break;
+			}
+			case LPR_DEC_FLOAT: {
+				ST_FLOAT(env->stack, 0)--;
 				pc++;
 				break;
 			}
@@ -736,7 +767,7 @@ Loopr_execute(ExeEnvironment *env, Loopr_Boolean top_level)
 			}
 			case LPR_GOTO: {
 				Loopr_byte_deserialize(&pc, &env->exe->code[pc + 1], sizeof(Loopr_Int32));
-				printf("#goto: %d\n", pc);
+				/*printf("#goto: %d\n", pc);*/
 				break;
 			}
 			case LPR_RETURN: {

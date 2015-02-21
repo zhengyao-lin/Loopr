@@ -42,10 +42,15 @@ typedef enum {
 	LPR_ADD_BYTE,
 	LPR_ADD_FLOAT,
 	LPR_ADD_STRING,
+	LPR_SUB_FLOAT,
 	LPR_SUB_BYTE,
+	LPR_MUL_FLOAT,
 	LPR_MUL_BYTE,
+	LPR_DIV_FLOAT,
 	LPR_DIV_BYTE,
+	LPR_INC_FLOAT,
 	LPR_INC,
+	LPR_DEC_FLOAT,
 	LPR_DEC,
 
 	LPR_INVOKE,
@@ -240,14 +245,14 @@ typedef struct ByteContainer_tag {
 typedef struct ByteInfo_tag {
 	char *assembly_name;
 	Loopr_Size need_stack;
-	Loopr_Size stack_regulator;		
+	Loopr_Size stack_regulator;
 } ByteInfo;
 
 typedef struct TypeInfo_tag {
 	char *short_name;
 	char *assembly_name;
 	char *scan_controller;
-	Loopr_Size size;		
+	Loopr_Size size;
 } TypeInfo;
 
 typedef enum {

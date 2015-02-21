@@ -1,5 +1,6 @@
-default Test_Main
-namespace Test_Main {
+default TestMain
+
+namespace TestMain {
 	.function void print(str)
 	.function getc()
 	.function void println(str) {
@@ -7,6 +8,7 @@ namespace Test_Main {
 		ldstr "\n"
 		addstr
 		invoke print, 1
+
 		ret
 	}
 	.function void printTAB(str) {
@@ -14,11 +16,14 @@ namespace Test_Main {
 		ldarg.0
 		addstr
 		invoke println, 1
+
 		ret
 	}
 	.function void new_line() {
 		ldstr "\n"
 		invoke print, 1
+
+		ret
 	}
 	.function BoolToString(bvalue) {
 		ldarg.0
@@ -27,6 +32,7 @@ namespace Test_Main {
 			ret
 		}
 		ldstr "false"
+		
 		ret
 	}
 
@@ -184,7 +190,136 @@ namespace Test_Main {
 	invoke BoolToString, 1
 	invoke println, 1
 
+	invoke new_line, 0
+
+	ldstr "   if (true == true)  ... "
+	invoke print, 1
+	ldb true
+	br.true {
+		ldstr "is true"
+		invoke println, 1
+	}
+
+	ldstr "   if (false == true) ... "
+	invoke print, 1
+	ldb false
+	br.true IF_TRUE
+	goto IF_ELSE
+
+IF_TRUE:
+	ldstr "is true"
+	invoke println, 1
+	goto IF_END
+
+IF_ELSE:
+	ldstr "is false"
+	invoke println, 1
+	goto IF_END
+
+IF_END:
+
+	ldstr "   if (5 == (byte)5)  ... "
+	invoke print, 1
+	ldb 5
+	br.5 {
+		ldstr "is true"
+		invoke println, 1
+	}
+
+
+	/******** Operation ********/
+	invoke new_line, 0
+	ldstr "OPERATION:\n"
+	invoke print, 1
+
+	ldstr "   1 + 5 = "
+	invoke print, 1
+	ldc.1
+	ldc.5
+	add
+	conv.i32.str
+	invoke println, 1
+
+	ldstr "   20 - 352 = "
+	invoke print, 1
+	ldc.20
+	ldb 352
+	sub
+	conv.i32.str
+	invoke println, 1
+
+	ldstr "   16 / 5 = "
+	invoke print, 1
+	ldc.16
+	ldc.5
+	div
+	conv.i32.str
+	invoke println, 1
+
+	ldstr "   20 * 720 = "
+	invoke print, 1
+	ldc.20
+	ldb 720
+	mul
+	conv.i32.str
+	invoke println, 1
+
+	invoke new_line, 0
+
+	ldstr "   (20 + 720) / 3 * 5 + 2015 - 200 = "
+	invoke print, 1
+	ldc.20
+	ldb 720
+	add
+	ldc.3
+	div
+	ldc.5
+	mul
+	ldb 2015
+	add
+	ldc.200
+	sub
+	conv.i32.str
+	invoke println, 1
+
+	ldstr "   (20.0 + 720.0) / 3.0 * 5.0 + 2015.0 - 200.0 = "
+	invoke print, 1
+	ldb 20.0
+	ldb 720.0
+	addf
+	ldb 3.0
+	divf
+	ldb 5.0
+	mulf
+	ldb 2015.0
+	addf
+	ldb 200.0
+	subf
+	conv.f16.str
+	invoke println, 1
+
+
+	/******** Namespace ********/
+	invoke new_line, 0
+	ldstr "NAMESPACE:\n"
+	invoke print, 1
+
+	ldstr "send from TestMain"
+	invoke <TestSpace>test, 1
+
 	ldstr "\npress a key to exit..."
 	invoke print, 1
 	invoke getc, 0
+}
+
+namespace TestSpace {
+	.using TestMain
+	.function test(str) {
+		ldstr "   namespace TestSpace recieved: "
+		ldarg.0
+		addstr
+		invoke println, 0
+
+		ret
+	}
 }

@@ -579,7 +579,7 @@ Gencode_statement(ByteContainer *env, Statement *list)
 			break;
 		case LPR_BRANCH:
 			Coding_push_code(env, code, NULL, 0);
-			Coding_push_code(env, LPR_NULL_CODE, &not_nullv, 1);
+			Coding_push_one_byte(env, LPR_True);
 
 			if (list->bytecode->next != NULL) {
 				Gencode_push_type_args(env, list->bytecode->next);

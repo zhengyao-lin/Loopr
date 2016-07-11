@@ -67,5 +67,5 @@ If everything is OK, the output will be like this:
     press a key to exit...
 then type enter to exit
 
-**NOTE:**Loopr for Windows is comming soon
+**NOTE:** Loopr for Windows is coming soon
 <br/><br/>
